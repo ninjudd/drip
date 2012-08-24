@@ -10,8 +10,8 @@ for arg in "$@"; do
             skip=false
         else
             if [ $arg == "-cp" ] || [ $arg == "-classpath" ]; then
-                skip=true        
-            elif [[ $arg != -* ]]; then 
+                skip=true
+            elif [[ $arg != -* ]]; then
                 main_class=$arg
                 continue
             fi
@@ -26,19 +26,27 @@ for arg in "$@"; do
     fi
 done
 
-rm decaf.in decaf.out
+rm decaf.in decaf.out decaf.err
 mkfifo decaf.in
 mkfifo decaf.out
+mkfifo decaf.err
 
-java $jvm_args org.flatland.decaf.Main < decaf.in > decaf.out &
+java $jvm_args org.flatland.decaf.Main < decaf.in > decaf.out 2> decaf.err &
 
 exec 3> decaf.in
 exec 4< decaf.out
+exec 5< decaf.err
 printf "$main_class\n$main_args\n" >&3
 
+IFS=
 while true; do
-    read -t 0.001 line     && echo "$line" >&3
-    read -t 0.001 line <&4 && echo "$line"
+    read -t 0.001 line && printf "$line\n" >&3
+    if [ $? == 1 ]; then
+        exec 3>&-
+    fi
+
+    read -t 0.001 line <&5     && printf "$line\n" >&2
+    read -t 0.001 -N1 char <&4 && printf "$char"
     if [ $? == 1 ]; then
         exit 0
     fi

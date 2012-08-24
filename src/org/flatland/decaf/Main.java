@@ -4,7 +4,12 @@ import java.lang.reflect.Method;
 public class Main {
   public static void main(String[] init_args) throws Exception {
     String class_name = readline();
-    String [] args    = readline().split("\t");
+    String s = readline();
+    String [] args    = s.split("\t");
+
+    if (args.length == 1 && args[0].equals("")) {
+      args = null;
+    }
 
     Method main = Class.forName(class_name).getMethod("main", String[].class);
     main.invoke(null, (Object) args);
