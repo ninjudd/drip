@@ -35,16 +35,16 @@ java $jvm_args org.flatland.decaf.Main < decaf.in > decaf.out 2> decaf.err &
 
 function duplex_stderr {
     exec 5< decaf.err
-    while read -u5 line; do
-        printf "%s\n" $line >&2
+    while read -r -u5 line; do
+        echo $line >&2
     done
 }
 
 function duplex_stdout {
     IFS=
     exec 4< decaf.out
-    while read -d$'\4' -n1 -u4 char; do
-        printf "%s" $char
+    while read -r -d$'\4' -n1 -u4 char; do
+        echo -n $char
     done
 }
 
@@ -52,8 +52,8 @@ function duplex_stdin {
     exec 3> decaf.in
     printf "$main_class\n$main_args\n" >&3
 
-    while read line 2> /dev/null; do
-        printf "%s\n" $line >&3
+    while read -r line 2> /dev/null; do
+        echo $line >&3
     done
     exec 3>&-
 }
