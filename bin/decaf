@@ -45,8 +45,8 @@ while true; do
         exec 3>&-
     fi
 
-    read -t 0.001 line <&5     && printf "$line\n" >&2
-    read -t 0.001 -N1 char <&4 && printf "$char"
+    read -t 0.001 -u5 line     && printf "$line\n" >&2
+    read -t 0.001 -N1 -u4 char && printf "$char"
     if [ $? == 1 ]; then
         exit 0
     fi
