@@ -33,21 +33,33 @@ mkfifo decaf.err
 
 java $jvm_args org.flatland.decaf.Main < decaf.in > decaf.out 2> decaf.err &
 
-exec 3> decaf.in
-exec 4< decaf.out
-exec 5< decaf.err
-printf "$main_class\n$main_args\n" >&3
+function duplex_stderr {
+    exec 5< decaf.err
+    while read -u5 line; do
+        printf "$line\n" >&2
+    done
+}
 
-IFS=
-while true; do
-    read -t 0.001 line && printf "$line\n" >&3
-    if [ $? == 1 ]; then
-        exec 3>&-
-    fi
+function duplex_stdout {
+    IFS=
+    exec 4< decaf.out
+    while read -N1 -u4 char; do
+        printf "$char"
+    done
+}
 
-    read -t 0.001 -u5 line     && printf "$line\n" >&2
-    read -t 0.001 -N1 -u4 char && printf "$char"
-    if [ $? == 1 ]; then
-        exit 0
-    fi
-done
+function duplex_stdin {
+    exec 3> decaf.in
+    printf "$main_class\n$main_args\n" >&3
+
+    while read line 2> /dev/null; do
+        printf "$line\n" >&3
+    done
+    exec 3>&-
+}
+
+duplex_stdin <&1 &
+duplex_stderr &
+duplex_stdout
+
+exit 0
