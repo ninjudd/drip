@@ -43,7 +43,7 @@ function duplex_stderr {
 function duplex_stdout {
     IFS=
     exec 4< decaf.out
-    while read -N1 -u4 char; do
+    while read -d$'\4' -n1 -u4 char; do
         printf "$char"
     done
 }
