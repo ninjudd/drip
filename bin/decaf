@@ -1,31 +1,78 @@
 #!/usr/bin/env bash
 
-skip=false
+function script_name { # Adapted from http://github.com/technomancy/leiningen
+    local script
 
-DECAF_HOME=${DECAF_HOME:-~/.decaf}
-DECAF_POOL=1
+    # normalize $0 on certain BSDs
+    if [ "$(dirname "$0")" = "." ]; then
+        script="$(which $(basename "$0"))"
+    else
+        script="$0"
+    fi
 
-if [ !  -d $DECAF_HOME ]; then
-    mkdir $DECAF_HOME
-fi
-
-function make_sha_path {
-    opts="$jvm_args $main_class"
-    sha=$(echo "$opts" | git hash-object --stdin)
-    path=$DECAF_HOME/$sha
-    mkdir -p $path
-    echo "$opts" > $path/opts
+    # resolve symlinks to the script itself portably
+    while [ -h "$script" ] ; do
+        ls=`ls -ld "$script"`
+        link=`expr "$ls" : '.*-> \(.*\)$'`
+        if expr "$link" : '/.*' > /dev/null; then
+            script="$link"
+        else
+            script="$(dirname "$script"$)/$link"
+        fi
+    done
+    echo $script
 }
 
-function parse_jvm_args {
+function http_get { # Adapted from http://github.com/technomancy/leiningen
+    if [ -z $http_get ]; then
+        if type -p curl >/dev/null 2>&1; then
+            http_get="curl -f -L -o"
+        else
+            http_get="wget -O"
+        fi
+    fi
+    mkdir -p $(dirname $1)
+    $http_get $1.pending $2
+    mv $1.pending $1
+}
+
+function find_decaf_jar {
+    if [ -z $DECAF_JAR ]; then
+        bin_dir=$(dirname $(script_name))
+        if [ -r $bin_dir/../src/org/flatland/decaf/Main.java ]; then
+            # Checkout
+            for jar in $(dirname $bin_dir)/target/*.jar; do
+                DECAF_JAR=$jar
+            done
+            if [ -z $DECAF_JAR ]; then
+                echo "Decaf jar not found in checkout. Do you need to run 'lein jar'?"
+                exit 1
+            fi
+        else
+            # Standalone
+            DECAF_JAR=~/.m2/repository/org/flatland/decaf/$DECAF_VERSION/decaf-$DECAF_VERSION.jar
+            [ -e $DECAF_JAR ] || http_get $DECAF_JAR $DECAF_URL
+        fi
+    fi
+}
+
+function parse_args {
+    local classpath=false
     jvm_args=''
+
+    if [ 0 -eq $# ]; then
+        echo "Usage: decaf [same args as java...]"
+        exit 0
+    fi
+
     for arg in "$@"; do
         if [ -z $main_class ]; then
-            if $skip; then
-                skip=false
+            if $classpath; then
+                classpath=false
+                arg=$DECAF_JAR:$arg
             else
                 if [ "$arg" == "-cp" ] || [ "$arg" == "-classpath" ]; then
-                    skip=true
+                    classpath=true
                 elif [[ "$arg" != -* ]]; then
                     main_class=$arg
                     continue
@@ -44,6 +91,14 @@ function parse_jvm_args {
             fi
         fi
     done
+}
+
+function make_sha_path {
+    opts="$jvm_args $main_class"
+    sha=$(echo "$opts" | git hash-object --stdin)
+    path=$DECAF_HOME/$sha
+    mkdir -p $path
+    echo "$opts" > $path/opts
 }
 
 function launch_jvm {
@@ -66,14 +121,14 @@ function lock_dir {
     fi
 }
 
-function connect_jvm {
+function find_jvm {
+    make_sha_path
+
     for dir in $path/*-*; do
         if [ -z $fifo ]; then
             lock_dir
-        else
-            if [ ! -e $dir/lock ]; then
-                let n=$n+1
-            fi
+        elif [ ! -e $dir/lock ]; then
+            let n=$n+1
         fi
     done
 
@@ -97,24 +152,27 @@ function duplex_stdin {
     exec 3>&-
 }
 
+function run_main {
+    duplex_stdin <&0 &
+    cat $fifo/err >&2 &
+    cat $fifo/out
+    rm -rf $fifo
+}
+
 # Let's go.
 
 DECAF_POOL=1
 DECAF_HOME=${DECAF_HOME:-~/.decaf}
 [ -d $DECAF_HOME ] || mkdir $DECAF_HOME
 DECAF_VERSION=${DECAF_VERSION:-0.0.1}
+DECAF_REPO=${DECAF_REPO:-http://clojars.org/repo}
+DECAF_URL=${DECAF_URL:-$DECAF_REPO/org/flatland/decaf/${DECAF_VERSION}/decaf-${DECAF_VERSION}.jar}
 
 find_decaf_jar
 
-parse_jvm_args "$@"
-make_sha_path
+parse_args "$@"
 
-connect_jvm
-
-duplex_stdin <&0 &
-cat $fifo/err >&2 &
-cat $fifo/out
-
-rm -rf $fifo
+find_jvm
+run_main
 
 exit 0
