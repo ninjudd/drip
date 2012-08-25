@@ -24,9 +24,9 @@ public class Main {
     System.in.close();
     System.out.close();
     System.err.close();
-    System.setIn(new BufferedInputStream(new FileInputStream(fifo_dir + "/in")));
-    System.setOut(new PrintStream(new FileOutputStream(fifo_dir + "/out")));
-    System.setErr(new PrintStream(new FileOutputStream(fifo_dir + "/err")));
+    System.setIn(new BufferedInputStream(new DelayedFileInputStream(fifo_dir + "/in")));
+    System.setOut(new PrintStream(new DelayedFileOutputStream(fifo_dir + "/out")));
+    System.setErr(new PrintStream(new DelayedFileOutputStream(fifo_dir + "/err")));
   }
 
   public static String readline() throws IOException {
