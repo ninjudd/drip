@@ -3,21 +3,26 @@ import java.lang.reflect.Method;
 import java.io.*;
 
 public class Main {
-  public static void main(String[] init_args) throws Exception {
-    String class_name = init_args[0];
-    String fifo_dir = init_args[1];
+  public static void main(String[] args) throws Exception {
+    String class_name = args[0];
+    String fifo_dir   = args[1];
 
     reopenStreams(fifo_dir);
     Method main = Class.forName(class_name).getMethod("main", String[].class);
 
-    String [] args = readline().substring(1).split("\t");
+    String decaf_init = System.getenv("DECAF_INIT");
+    if (decaf_init != null) mainInvoke(main, decaf_init);
 
+    mainInvoke(main, readline());
+    System.exit(0);
+  }
+
+  public static void mainInvoke(Method main, String argstring) throws Exception {
+    String [] args = argstring.trim().split("\t");
     if (args.length == 1 && args[0].equals("")) {
       args = null;
     }
-
     main.invoke(null, (Object) args);
-    System.exit(0);
   }
 
   public static void reopenStreams(String fifo_dir) throws FileNotFoundException, IOException {
