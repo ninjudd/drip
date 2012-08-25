@@ -149,7 +149,7 @@ function find_jvm {
 
 function duplex_stdin {
     exec 3> $fifo/in
-    printf " $main_args\n" >&3
+    printf -- "$main_args\n" >&3
     cat >&3 2> /dev/null
     exec 3>&-
 }
