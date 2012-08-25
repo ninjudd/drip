@@ -110,14 +110,16 @@ function launch_jvm {
         mkfifo $dir/err
 
         java $jvm_args org.flatland.decaf.Main $main_class $dir &
+        echo $! > $dir/jvm.pid
     fi
 }
 
 function lock_dir {
     if lockfile -0 -r1 $dir/lock 2> /dev/null; then
-        echo $$ > $dir/pid
-        fifo=$dir
-        return 0
+        if [ ! -z $1 ] || kill -0 $(cat $dir/jvm.pid) 2> /dev/null; then
+            echo $$ > $dir/client.pid
+            fifo=$dir
+        fi
     fi
 }
 
@@ -134,7 +136,7 @@ function find_jvm {
 
     if [ -z $fifo ]; then
         launch_jvm
-        lock_dir
+        lock_dir 1
     fi
 
     n=${n:-0}
