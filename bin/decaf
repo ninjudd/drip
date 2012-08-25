@@ -92,10 +92,19 @@ function connect_jvm {
 
 function duplex_stdin {
     exec 3> $fifo/in
-    printf " $main_args\n\n" >&3
+    printf " $main_args\n" >&3
     cat >&3 2> /dev/null
     exec 3>&-
 }
+
+# Let's go.
+
+DECAF_POOL=1
+DECAF_HOME=${DECAF_HOME:-~/.decaf}
+[ -d $DECAF_HOME ] || mkdir $DECAF_HOME
+DECAF_VERSION=${DECAF_VERSION:-0.0.1}
+
+find_decaf_jar
 
 parse_jvm_args "$@"
 make_sha_path
@@ -103,8 +112,8 @@ make_sha_path
 connect_jvm
 
 duplex_stdin <&0 &
-cat < $fifo/err >&2 &
-cat < $fifo/out
+cat $fifo/err >&2 &
+cat $fifo/out
 
 rm -rf $fifo
 
