@@ -2,64 +2,110 @@
 
 skip=false
 
-jvm_args=''
+DECAF_HOME=${DECAF_HOME:-~/.decaf}
+DECAF_POOL=1
 
-for arg in "$@"; do
-    if [ -z $main_class ]; then
-        if $skip; then
-            skip=false
+if [ !  -d $DECAF_HOME ]; then
+    mkdir $DECAF_HOME
+fi
+
+function make_sha_path {
+    opts="$jvm_args $main_class"
+    sha=$(echo "$opts" | git hash-object --stdin)
+    path=$DECAF_HOME/$sha
+    mkdir -p $path
+    echo "$opts" > $path/opts
+}
+
+function parse_jvm_args {
+    jvm_args=''
+    for arg in "$@"; do
+        if [ -z $main_class ]; then
+            if $skip; then
+                skip=false
+            else
+                if [ "$arg" == "-cp" ] || [ "$arg" == "-classpath" ]; then
+                    skip=true
+                elif [[ "$arg" != -* ]]; then
+                    main_class=$arg
+                    continue
+                fi
+            fi
+            if [ -z "$jvm_args" ]; then
+                jvm_args=$arg
+            else
+                jvm_args="$jvm_args $arg"
+            fi
         else
-            if [ $arg == "-cp" ] || [ $arg == "-classpath" ]; then
-                skip=true
-            elif [[ $arg != -* ]]; then
-                main_class=$arg
-                continue
+            if [ -z "$main_args" ]; then
+                main_args=$arg
+            else
+                main_args="$main_args\t$arg"
             fi
         fi
-        jvm_args="$jvm_args $arg"
-    else
-        if [ -z $main_args ]; then
-            main_args=$arg
-        else
-            main_args="$main_args\t$arg"
-        fi
-    fi
-done
-
-rm decaf.in decaf.out decaf.err
-mkfifo decaf.in
-mkfifo decaf.out
-mkfifo decaf.err
-
-java $jvm_args org.flatland.decaf.Main < decaf.in > decaf.out 2> decaf.err &
-
-function duplex_stderr {
-    exec 5< decaf.err
-    while read -r -u5 line; do
-        echo $line >&2
     done
 }
 
-function duplex_stdout {
-    IFS=
-    exec 4< decaf.out
-    while read -r -d$'\4' -n1 -u4 char; do
-        echo -n $char
+function launch_jvm {
+    dir=$path/$$-$n
+
+    if mkdir $dir; then
+        mkfifo $dir/in
+        mkfifo $dir/out
+        mkfifo $dir/err
+
+        java $jvm_args org.flatland.decaf.Main $main_class $dir &
+    fi
+}
+
+function lock_dir {
+    if lockfile -0 -r1 $dir/lock 2> /dev/null; then
+        echo $$ > $dir/pid
+        fifo=$dir
+        return 0
+    fi
+}
+
+function connect_jvm {
+    for dir in $path/*-*; do
+        if [ -z $fifo ]; then
+            lock_dir
+        else
+            if [ ! -e $dir/lock ]; then
+                let n=$n+1
+            fi
+        fi
+    done
+
+    if [ -z $fifo ]; then
+        launch_jvm
+        lock_dir
+    fi
+
+    n=${n:-0}
+
+    while [ $n -lt $DECAF_POOL ]; do
+        let n=$n+1
+        launch_jvm
     done
 }
 
 function duplex_stdin {
-    exec 3> decaf.in
-    printf "$main_class\n$main_args\n" >&3
-
-    while read -r line 2> /dev/null; do
-        echo $line >&3
-    done
+    exec 3> $fifo/in
+    printf " $main_args\n\n" >&3
+    cat >&3 2> /dev/null
     exec 3>&-
 }
 
-duplex_stdin <&1 &
-duplex_stderr &
-duplex_stdout
+parse_jvm_args "$@"
+make_sha_path
+
+connect_jvm
+
+duplex_stdin <&0 &
+cat < $fifo/err >&2 &
+cat < $fifo/out
+
+rm -rf $fifo
 
 exit 0

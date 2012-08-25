@@ -1,22 +1,35 @@
 package org.flatland.decaf;
 import java.lang.reflect.Method;
+import java.io.*;
 
 public class Main {
   public static void main(String[] init_args) throws Exception {
-    String class_name = readline();
-    String s = readline();
-    String [] args    = s.split("\t");
+    String class_name = init_args[0];
+    String fifo_dir = init_args[1];
+
+    reopenStreams(fifo_dir);
+    Method main = Class.forName(class_name).getMethod("main", String[].class);
+
+    String [] args = readline().substring(1).split("\t");
 
     if (args.length == 1 && args[0].equals("")) {
       args = null;
     }
 
-    Method main = Class.forName(class_name).getMethod("main", String[].class);
     main.invoke(null, (Object) args);
     System.exit(0);
   }
 
-  public static String readline() throws java.io.IOException {
+  public static void reopenStreams(String fifo_dir) throws FileNotFoundException, IOException {
+    System.in.close();
+    System.out.close();
+    System.err.close();
+    System.setIn(new BufferedInputStream(new FileInputStream(fifo_dir + "/in")));
+    System.setOut(new PrintStream(new FileOutputStream(fifo_dir + "/out")));
+    System.setErr(new PrintStream(new FileOutputStream(fifo_dir + "/err")));
+  }
+
+  public static String readline() throws IOException {
     StringBuffer s = new StringBuffer();
 
     while (true) {
