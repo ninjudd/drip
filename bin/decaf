@@ -78,23 +78,15 @@ function parse_args {
                     continue
                 fi
             fi
-            if [ -z "$jvm_args" ]; then
-                jvm_args=$arg
-            else
-                jvm_args="$jvm_args $arg"
-            fi
+            jvm_args[${#jvm_args[*]}]=$arg
         else
-            if [ -z "$main_args" ]; then
-                main_args=$arg
-            else
-                main_args="$main_args\t$arg"
-            fi
+            main_args[${#main_args[*]}]=$arg
         fi
     done
 }
 
 function make_sha_path {
-    opts="$jvm_args $main_class"
+    opts="${jvm_args[*]} $main_class"
     sha=$(echo "$opts" | git hash-object --stdin)
     path=$DECAF_HOME/$sha
     mkdir -p $path
@@ -109,7 +101,7 @@ function launch_jvm {
         mkfifo $dir/out
         mkfifo $dir/err
 
-        java $jvm_args org.flatland.decaf.Main $main_class $dir &
+        java ${jvm_args[*]} org.flatland.decaf.Main $main_class $dir &
         echo $! > $dir/jvm.pid
     fi
 }
@@ -149,7 +141,7 @@ function find_jvm {
 
 function duplex_stdin {
     exec 3> $fifo/in
-    printf -- "$main_args\n" >&3
+    (IFS=$'\t'; printf -- "${main_args[*]}\n" >&3)
     cat >&3 2> /dev/null
     exec 3>&-
 }
