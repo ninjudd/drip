@@ -8,13 +8,23 @@ public class Main {
     String fifo_dir   = args[1];
 
     reopenStreams(fifo_dir);
-    Method main = Class.forName(class_name).getMethod("main", String[].class);
+    Method main = mainMethod(class_name);
 
-    String decaf_init = System.getenv("DECAF_INIT");
-    if (decaf_init != null) mainInvoke(main, decaf_init);
+    Method init       = mainMethod(System.getenv("DECAF_INIT_CLASS"));
+    String init_args  = System.getenv("DECAF_INIT");
+    if (init_args != null) mainInvoke(init == null ? main : init, init_args);
 
     mainInvoke(main, readline());
     System.exit(0);
+  }
+
+  private static Method mainMethod(String class_name)
+    throws ClassNotFoundException, NoSuchMethodException {
+    if (class_name != null) {
+      return Class.forName(class_name).getMethod("main", String[].class);
+    } else {
+      return null;
+    }
   }
 
   public static void mainInvoke(Method main, String argstring) throws Exception {
