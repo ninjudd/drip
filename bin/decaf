@@ -126,17 +126,18 @@ function find_jvm {
         fi
     done
 
-    if [ -z $fifo ]; then
-        launch_jvm
-        lock_dir 1
-    fi
-
     n=${n:-0}
 
     while [ $n -lt $DECAF_POOL ]; do
         let n=$n+1
         launch_jvm
     done
+
+    if [ -z $fifo ]; then
+        echo java ${jvm_args[*]} $main_class ${main_args[*]}
+        java ${jvm_args[*]} $main_class ${main_args[*]}
+        exit $?
+    fi
 }
 
 function duplex_stdin {
