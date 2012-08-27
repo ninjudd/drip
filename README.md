@@ -32,6 +32,7 @@ not the case, you can substitute your favorite location.
 development, this is the way to go.*
 
     git clone https://github.com/flatland/decaf.git
+    cd decaf && lein jar
     ln -s $PWD/decaf/bin/decaf ~/bin/decaf
 
 # Usage
