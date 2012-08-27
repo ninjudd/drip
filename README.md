@@ -2,6 +2,9 @@ Decaf is a launcher for the Java Virtual Machine that provides much faster
 startup times than the `java` command. The `decaf` script is intended to be a
 drop-in replacement for the `java` command, only faster.
 
+Decaf is a single bash script and a small amount of Java code. It is intended to
+work with any JVM-based language and anywhere bash is available.
+
 # How does it work?
 
 Unlike other tools intended to solve the JVM startup problem (e.g. Nailgun,
@@ -14,11 +17,6 @@ whenever any error is encountered, *just in case* dirty state is the cause.
 Instead of going down this perilous road again, Decaf uses a different
 strategy. It keeps a fresh JVM spun up in reserve with the correct classpath and
 other JVM options so you can quickly connect and use it when needed.
-
-## Simplicity and portability
-
-Decaf is a single bash script and a small amount of Java code. It is intended to
-work with any JVM-based language and anywhere bash is available.
 
 # Installation
 
