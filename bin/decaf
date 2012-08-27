@@ -134,7 +134,6 @@ function find_jvm {
     done
 
     if [ -z $fifo ]; then
-        echo java ${jvm_args[*]} $main_class ${main_args[*]}
         java ${jvm_args[*]} $main_class ${main_args[*]}
         exit $?
     fi
