@@ -1,7 +1,7 @@
-if [[ "$LEIN_JAVA_CMD" == *decaf ]]; then
+if [[ "$LEIN_JAVA_CMD" == *drip ]]; then
   LEIN_JAVA_CMD=
 fi
 
-if [[ "$JAVA_CMD" == *decaf ]]; then
+if [[ "$JAVA_CMD" == *drip ]]; then
   JAVA_CMD=
 fi
