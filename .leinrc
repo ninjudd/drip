@@ -1,0 +1,7 @@
+if [[ "$LEIN_JAVA_CMD" == *decaf ]]; then
+  LEIN_JAVA_CMD=
+fi
+
+if [[ "$JAVA_CMD" == *decaf ]]; then
+  JAVA_CMD=
+fi
