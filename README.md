@@ -25,7 +25,7 @@ not the case, you can substitute your favorite location.
 
 **Standalone:** This is what we'd recommend to get started quickly.
 
-    curl https://raw.github.com/flatland/decaf/master/bin/decaf > ~/bin/decaf
+    curl -L http://decaf.flatland.org > ~/bin/decaf
     chmod 755 ~/bin/decaf
 
 **Checkout:** If you'd like to hack on Decaf or follow the latest development,
