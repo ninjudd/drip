@@ -49,9 +49,9 @@ For example, to start a Clojure repl with decaf:
 ## With Leiningen
 
 You can use decaf with [Leiningen](https://github.com/technomancy/leiningen) to
-make tasks faster. For now, you'll need to install Decaf and then check out the
-`decaf` branch of Leiningen. Then add the following to your `~/.lein/leinrc`
-file:
+make tasks [faster](https://gist.github.com/3491702). For now, you'll need to
+install Decaf and then check out the `decaf` branch of Leiningen. Then add the
+following to your `~/.lein/leinrc` file:
 
     LEIN_JAVA_CMD=decaf
 
