@@ -33,7 +33,7 @@ development, this is the way to go.*
 
     git clone https://github.com/flatland/drip.git
     cd drip && lein jar
-    ln -s $PWD/bin/drip ~/bin/drip
+    ln -s {$PWD,~}/bin/drip
 
 # Usage
 
