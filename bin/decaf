@@ -56,9 +56,11 @@ function find_decaf_jar {
     fi
 }
 
+declare -a jvm_args
+declare -a main_args
+
 function parse_args {
     local classpath=false
-    jvm_args=''
 
     if [ 0 -eq $# ]; then
         echo "Usage: decaf [same args as java...]"
@@ -134,7 +136,10 @@ function find_jvm {
     done
 
     if [ -z $fifo ]; then
-        java ${jvm_args[*]} $main_class ${main_args[*]}
+        for arg in "${main_args[@]}"; do
+            argstr=$argstr$(printf -- "%q " "$arg")
+        done
+        eval java ${jvm_args[*]} $main_class $argstr
         exit $?
     fi
 }
