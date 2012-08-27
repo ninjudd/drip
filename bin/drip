@@ -36,22 +36,22 @@ function http_get { # Adapted from http://github.com/technomancy/leiningen
     mv $1.pending $1
 }
 
-function find_decaf_jar {
-    if [ -z $DECAF_JAR ]; then
+function find_drip_jar {
+    if [ -z $DRIP_JAR ]; then
         bin_dir=$(dirname $(script_name))
-        if [ -r $bin_dir/../src/org/flatland/decaf/Main.java ]; then
+        if [ -r $bin_dir/../src/org/flatland/drip/Main.java ]; then
             # Checkout
             for jar in $(dirname $bin_dir)/target/*.jar; do
-                DECAF_JAR=$jar
+                DRIP_JAR=$jar
             done
-            if [ -z $DECAF_JAR ]; then
-                echo "Decaf jar not found in checkout. Do you need to run 'lein jar'?"
+            if [ -z $DRIP_JAR ]; then
+                echo "Drip jar not found in checkout. Do you need to run 'lein jar'?"
                 exit 1
             fi
         else
             # Standalone
-            DECAF_JAR=~/.m2/repository/org/flatland/decaf/$DECAF_VERSION/decaf-$DECAF_VERSION.jar
-            [ -e $DECAF_JAR ] || http_get $DECAF_JAR $DECAF_URL
+            DRIP_JAR=~/.m2/repository/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar
+            [ -e $DRIP_JAR ] || http_get $DRIP_JAR $DRIP_URL
         fi
     fi
 }
@@ -63,7 +63,7 @@ function parse_args {
     local classpath=false
 
     if [ 0 -eq $# ]; then
-        echo "Usage: decaf [same args as java...]"
+        echo "Usage: drip [same args as java...]"
         exit 0
     fi
 
@@ -71,7 +71,7 @@ function parse_args {
         if [ -z $main_class ]; then
             if $classpath; then
                 classpath=false
-                arg=$DECAF_JAR:$arg
+                arg=$DRIP_JAR:$arg
             else
                 if [ "$arg" == "-cp" ] || [ "$arg" == "-classpath" ]; then
                     classpath=true
@@ -90,7 +90,7 @@ function parse_args {
 function make_sha_path {
     opts="${jvm_args[*]} $main_class"
     sha=$(echo "$opts" | git hash-object --stdin)
-    path=$DECAF_HOME/$sha
+    path=$DRIP_HOME/$sha
     mkdir -p $path
     echo "$opts" > $path/opts
 }
@@ -103,7 +103,7 @@ function launch_jvm {
         mkfifo $dir/out
         mkfifo $dir/err
 
-        java ${jvm_args[*]} org.flatland.decaf.Main $main_class $dir &
+        java ${jvm_args[*]} org.flatland.drip.Main $main_class $dir &
         echo $! > $dir/jvm.pid
     fi
 }
@@ -130,7 +130,7 @@ function find_jvm {
 
     n=${n:-0}
 
-    while [ $n -lt $DECAF_POOL ]; do
+    while [ $n -lt $DRIP_POOL ]; do
         let n=$n+1
         launch_jvm
     done
@@ -160,14 +160,14 @@ function run_main {
 
 # Let's go.
 
-DECAF_POOL=1
-DECAF_HOME=${DECAF_HOME:-~/.decaf}
-[ -d $DECAF_HOME ] || mkdir $DECAF_HOME
-DECAF_VERSION=${DECAF_VERSION:-0.0.1}
-DECAF_REPO=${DECAF_REPO:-http://clojars.org/repo}
-DECAF_URL=${DECAF_URL:-$DECAF_REPO/org/flatland/decaf/${DECAF_VERSION}/decaf-${DECAF_VERSION}.jar}
+DRIP_POOL=1
+DRIP_HOME=${DRIP_HOME:-~/.drip}
+[ -d $DRIP_HOME ] || mkdir $DRIP_HOME
+DRIP_VERSION=${DRIP_VERSION:-0.0.1}
+DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
+DRIP_URL=${DRIP_URL:-$DRIP_REPO/org/flatland/drip/${DRIP_VERSION}/drip-${DRIP_VERSION}.jar}
 
-find_decaf_jar
+find_drip_jar
 
 parse_args "$@"
 
