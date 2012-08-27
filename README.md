@@ -23,17 +23,13 @@ other JVM options so you can quickly connect and use it when needed.
 The following instructions assume that `~/bin` is on your `$PATH`. If that is
 not the case, you can substitute your favorite location.
 
-### Standalone
-
-This is what we'd recommend to get started quickly.
+**Standalone** -- This is what we'd recommend to get started quickly.
 
     curl https://raw.github.com/flatland/decaf/master/bin/decaf > ~/bin/decaf
     chmod 755 ~/bin/decaf
 
-### Git Checkout
-
-If you'd like to hack on Decaf of follow the latest development, this is the way
-to go.
+**Checkout** -- If you'd like to hack on Decaf or follow the latest development,
+this is the way to go.
 
     git clone https://github.com/flatland/decaf.git
     ln -s $PWD/decaf/bin/decaf ~/bin/decaf
