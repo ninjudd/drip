@@ -86,7 +86,7 @@ public class Main {
   private Method mainMethod(String className)
     throws ClassNotFoundException, NoSuchMethodException {
     if (className != null) {
-      return Class.forName(className).getMethod("main", String[].class);
+      return ClassLoader.getSystemClassLoader().loadClass(className).getMethod("main", String[].class);
     } else {
       return null;
     }
