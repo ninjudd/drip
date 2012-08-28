@@ -1,6 +1,8 @@
 package org.flatland.drip;
 import java.lang.reflect.Method;
 import java.io.*;
+import java.util.Scanner;
+import java.util.LinkedList;
 
 public class Main {
   public static void main(String[] args) throws Exception {
@@ -28,11 +30,13 @@ public class Main {
   }
 
   public static void mainInvoke(Method main, String argstring) throws Exception {
-    String [] args = argstring.trim().split("\t");
-    if (args.length == 1 && args[0].equals("")) {
-      args = null;
+    Scanner s = new Scanner(argstring);
+    s.useDelimiter("\t");
+    LinkedList<String> args = new LinkedList<String>();
+    while (s.hasNext()) {
+      args.add(s.next());
     }
-    main.invoke(null, (Object) args);
+    main.invoke(null, (Object)args.toArray(new String[0]));
   }
 
   public static void reopenStreams(String fifo_dir) throws FileNotFoundException, IOException {
@@ -45,13 +49,11 @@ public class Main {
   }
 
   public static String readline() throws IOException {
-    StringBuffer s = new StringBuffer();
-
-    while (true) {
-      char c = (char) System.in.read();
-      if (c == '\n' || c == -1) break;
-      s.append(c);
+    Scanner s = new Scanner(System.in);
+    if (s.hasNextLine()) {
+      return s.nextLine();
+    } else {
+      return "";
     }
-    return s.toString();
   }
 }
