@@ -9,7 +9,7 @@ public class DelayedFileOutputStream extends OutputStream {
     this.path = path;
   }
 
-  private FileOutputStream fs() {
+  private synchronized FileOutputStream fs() {
     if (fs == null) {
       try {
         this.fs = new FileOutputStream(path);

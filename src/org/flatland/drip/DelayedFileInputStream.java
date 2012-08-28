@@ -9,7 +9,7 @@ public class DelayedFileInputStream extends InputStream {
     this.path = path;
   }
 
-  private FileInputStream fs() {
+  private synchronized FileInputStream fs() {
     if (fs == null) {
       try {
         this.fs = new FileInputStream(path);
