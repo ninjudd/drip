@@ -74,6 +74,7 @@ public class Main {
 
     String mainArgs = readLine();
     String runtimeArgs = readLine();
+    setProperties(runtimeArgs);
 
     invoke(main, splitArgs(mainArgs, "\u0000"));
   }
