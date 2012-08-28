@@ -34,8 +34,4 @@ public class DelayedFileOutputStream extends OutputStream {
   public void close() throws IOException {
     fs().close();
   }
-
-  protected void finalize() throws IOException {
-    close();
-  }
 }

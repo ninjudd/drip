@@ -42,8 +42,4 @@ public class DelayedFileInputStream extends InputStream {
   public void close() throws IOException {
     fs().close();
   }
-
-  protected void finalize() throws IOException {
-    close();
-  }
 }
