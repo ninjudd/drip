@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 public class Main {
   private Scanner s;
-  private List<Openable> lazyStreams;
+  private List<Switchable> lazyStreams;
   private String className;
   private String fifoDir;
 
@@ -31,12 +31,12 @@ public class Main {
       invoke(init == null ? main : init, splitArgs(initArgs, "\n"));
     }
 
+    for (Switchable o : lazyStreams) {
+      o.flip();
+    }
+
     String mainArgs = readLine();
     String runtimeArgs = readLine();
-
-    for (Openable o : lazyStreams) {
-      o.forceOpen();
-    }
 
     invoke(main, splitArgs(mainArgs, "\u0000"));
   }
@@ -91,14 +91,10 @@ public class Main {
   }
 
   private void reopenStreams(String fifo_dir) throws FileNotFoundException, IOException {
-    System.in.close();
-    System.out.close();
-    System.err.close();
-
-    DelayedFileInputStream stdin = new DelayedFileInputStream(fifo_dir + "/in");
-    DelayedFileOutputStream stdout = new DelayedFileOutputStream(fifo_dir + "/out");
-    DelayedFileOutputStream stderr = new DelayedFileOutputStream(fifo_dir + "/err");
-    lazyStreams = Arrays.<Openable>asList(stdin, stdout, stderr);
+    SwitchableFileInputStream stdin = new SwitchableFileInputStream(System.in, fifo_dir + "/in");
+    SwitchableFileOutputStream stdout = new SwitchableFileOutputStream(System.out, fifo_dir + "/out");
+    SwitchableFileOutputStream stderr = new SwitchableFileOutputStream(System.err, fifo_dir + "/err");
+    lazyStreams = Arrays.<Switchable>asList(stdin, stdout, stderr);
 
     System.setIn(new BufferedInputStream(stdin));
     System.setOut(new PrintStream(stdout));
