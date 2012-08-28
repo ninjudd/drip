@@ -187,7 +187,7 @@ function run_main {
 
 function run_drip_command {
     case $drip_command in
-        version|-version)
+        version)
             echo "drip version \"$DRIP_VERSION\""
             java -version
             ;;
@@ -196,6 +196,9 @@ function run_drip_command {
             ;;
         ps)
             jps -vlm | grep org.flatland.drip.Main
+            ;;
+        -*)
+            java $drip_command
             ;;
     esac
 }
