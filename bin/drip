@@ -41,12 +41,10 @@ function find_drip_jar {
         bin_dir=$(dirname $(script_name))
         if [ -r $bin_dir/../src/org/flatland/drip/Main.java ]; then
             # Checkout
-            for jar in $(dirname $bin_dir)/target/*.jar; do
-                DRIP_JAR=$jar
-            done
-            if [ -z $DRIP_JAR ]; then
-                echo "Drip jar not found in checkout. Do you need to run 'lein jar'?"
-                exit 1
+            drip_dir=$(dirname $bin_dir)
+            DRIP_JAR=$drip_dir/drip.jar
+            if [ ! -e $DRIP_JAR ]; then
+                (cd $drip_dir; make jar)
             fi
         else
             # Standalone

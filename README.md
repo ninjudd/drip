@@ -32,8 +32,7 @@ not the case, you can substitute your favorite location.
 development, this is the way to go.*
 
     git clone https://github.com/flatland/drip.git
-    cd drip && lein jar
-    ln -s {$PWD,~}/bin/drip
+    cd drip && make install ~/bin
 
 # Usage
 

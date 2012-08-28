@@ -1,4 +1,3 @@
 *~
-.lein*
-target
-pom.xml
+*.class
+*.jar

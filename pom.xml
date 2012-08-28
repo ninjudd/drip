@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.flatland</groupId>
+  <artifactId>drip</artifactId>
+  <packaging>jar</packaging>
+  <version>0.0.2</version>
+  <name>drip</name>
+  <description>Fast JVM launching without the hassle of persistent JVMs.</description>
+  <url>https://github.com/flatland/drip</url>
+  <licenses>
+    <license>
+      <name>Eclipse Public License - v 1.0</name>
+      <url>http://www.eclipse.org/legal/epl-v10.html</url>
+    </license>
+  </licenses>
+  <scm>
+    <connection>scm:git:git://github.com/flatland/drip.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/flatland/drip.git</developerConnection>
+    <url>https://github.com/flatland/drip</url>
+  </scm>
+</project>
