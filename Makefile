@@ -1,19 +1,29 @@
-prefix = ~/bin
+PREFIX=~/bin
+SOURCES=$(wildcard src/org/flatland/drip/*.java)
+CLASSES=$(SOURCES:.java=.class)
+JAR=drip.jar
 
 all: jar
 
-jar: compile
-	jar cf drip.jar -C src/ org
+%.class: %.java
+	javac ${SOURCES}
 
-compile: src/org/flatland/drip/*.java
-	javac src/org/flatland/drip/*.java
+${JAR}: ${CLASSES}
+	jar cf ${JAR} -C src/ org
+
+jar: ${JAR}
+
+compile: ${CLASSES}
 
 clean:
-	rm src/org/flatland/drip/*.class
-	rm drip.jar
+	rm ${CLASSES}
+	rm ${JAR}
 
-install:
-	ln -sf $$PWD/bin/drip ${prefix}/drip
+install: jar
+	ln -sf $$PWD/bin/drip ${PREFIX}/drip
 
 release: jar
-	scp drip.jar pom.xml clojars@clojars.org:
+	scp ${JAR} pom.xml clojars@clojars.org:
+
+
+.PHONY: all jar compile clean install release

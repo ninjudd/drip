@@ -43,9 +43,7 @@ function find_drip_jar {
             # Checkout
             drip_dir=$(dirname $bin_dir)
             DRIP_JAR=$drip_dir/drip.jar
-            if [ ! -e $DRIP_JAR ]; then
-                (cd $drip_dir; make jar)
-            fi
+            (cd $drip_dir && make -s jar)
         else
             # Standalone
             DRIP_JAR=~/.m2/repository/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar

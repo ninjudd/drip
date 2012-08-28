@@ -32,7 +32,7 @@ not the case, you can substitute your favorite location.
 development, this is the way to go.*
 
     git clone https://github.com/flatland/drip.git
-    cd drip && make prefix=~/bin install
+    cd drip && make PREFIX=~/bin install
 
 # Usage
 
