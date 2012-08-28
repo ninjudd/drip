@@ -37,7 +37,7 @@ public class DelayedFileInputStream extends InputStream {
 
   public int available() throws IOException {
     return fs().available();
-  }    
+  }
 
   public void close() throws IOException {
     fs().close();
