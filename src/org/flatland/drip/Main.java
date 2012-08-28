@@ -10,8 +10,8 @@ public class Main {
     reopenStreams(fifo_dir);
     Method main = mainMethod(class_name);
 
-    Method init       = mainMethod(System.getenv("DECAF_INIT_CLASS"));
-    String init_args  = System.getenv("DECAF_INIT");
+    Method init       = mainMethod(System.getenv("DRIP_INIT_CLASS"));
+    String init_args  = System.getenv("DRIP_INIT");
     if (init_args != null) mainInvoke(init == null ? main : init, init_args);
 
     mainInvoke(main, readline());
