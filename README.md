@@ -44,7 +44,7 @@ For example, to start a Clojure repl with drip:
 
     drip -cp clojure.jar clojure.main
 
-## JVM Language Integration
+### JVM Language Integration
 
 For more information about how to integrate Drip with your favorite JVM
 language, check out the
