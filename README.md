@@ -44,6 +44,17 @@ For example, to start a Clojure repl with drip:
 
     drip -cp clojure.jar clojure.main
 
+The Drip JVM will eventually shut itself down if you never connect to it. The
+time limit defaults to four hours, but you can change this by setting the
+`DRIP_SHUTDOWN` environment variable before calling `drip` to set a timeout, in
+minutes:
+
+    DRIP_TIMEOUT=30 drip -cp clojure.jar clojure.main
+
+This creates a Clojure repl as usual, either by starting up a new one or
+connecting to a waiting JVM. But the JVM that is spun up to serve future
+requests with the same classpath will have a 30-minute timeout to deactivation.
+
 ### JVM Language Integration
 
 For more information about how to integrate Drip with your favorite JVM

@@ -14,15 +14,50 @@ public class Main {
   private Scanner s;
   private List<Switchable> lazyStreams;
   private String className;
-  private String fifoDir;
+  private File fifoDir;
 
   public Main(String className, String fifoDir) {
     this.className = className.replace('/', '.');
-    this.fifoDir = fifoDir;
+    this.fifoDir = new File(fifoDir);
+  }
+
+  private void killAfterTimeout() {
+    String idleTimeStr = System.getenv("DRIP_SHUTDOWN"); // in minutes
+    int idleTime;
+    if (idleTimeStr == null) {
+      idleTime = 4 * 60; // four hours
+    } else {
+      idleTime = Integer.parseInt(idleTimeStr);
+    }
+
+    try {
+      Thread.sleep(idleTime * 60 * 1000); // convert minutes to ms
+    } catch (InterruptedException e) {
+      System.err.println("drip: Interrutped??");
+      return; // I guess someone wanted to kill the timeout thread?
+    }
+
+    File lockDir = new File(fifoDir, "lock");
+    if (lockDir.mkdir()) {
+      System.exit(0);
+    } else {
+      // someone is already connected; let the process finish
+    }
+  }
+
+  private void startIdleKiller() {
+    Thread idleKiller = new Thread() {
+        public void run() {
+          killAfterTimeout();
+        }
+      };
+
+    idleKiller.setDaemon(true);
+    idleKiller.start();
   }
 
   public void start() throws Exception {
-    reopenStreams(fifoDir);
+    reopenStreams();
     Method main = mainMethod(className);
 
     Method init = mainMethod(System.getenv("DRIP_INIT_CLASS"));
@@ -30,6 +65,8 @@ public class Main {
     if (initArgs != null) {
       invoke(init == null ? main : init, splitArgs(initArgs, "\n"));
     }
+
+    startIdleKiller();
 
     for (Switchable o : lazyStreams) {
       o.flip();
@@ -90,10 +127,10 @@ public class Main {
     field.setAccessible(false);
   }
 
-  private void reopenStreams(String fifo_dir) throws FileNotFoundException, IOException {
-    SwitchableFileInputStream stdin = new SwitchableFileInputStream(System.in, fifo_dir + "/in");
-    SwitchableFileOutputStream stdout = new SwitchableFileOutputStream(System.out, fifo_dir + "/out");
-    SwitchableFileOutputStream stderr = new SwitchableFileOutputStream(System.err, fifo_dir + "/err");
+  private void reopenStreams() throws FileNotFoundException, IOException {
+    SwitchableFileInputStream stdin = new SwitchableFileInputStream(System.in, new File(fifoDir, "in"));
+    SwitchableFileOutputStream stdout = new SwitchableFileOutputStream(System.out, new File(fifoDir, "out"));
+    SwitchableFileOutputStream stderr = new SwitchableFileOutputStream(System.err, new File(fifoDir, "err"));
     lazyStreams = Arrays.<Switchable>asList(stdin, stdout, stderr);
 
     System.setIn(new BufferedInputStream(stdin));

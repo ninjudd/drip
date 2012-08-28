@@ -2,12 +2,12 @@ package org.flatland.drip;
 import java.io.*;
 
 public class SwitchableFileOutputStream extends OutputStream implements Switchable {
-  private final String pathToNewOut;
+  private final File pathToNewOut;
 
   private OutputStream out;
   private boolean switched;
 
-  public SwitchableFileOutputStream(OutputStream old, String path) {
+  public SwitchableFileOutputStream(OutputStream old, File path) {
     this.out = old;
     this.pathToNewOut = path;
     this.switched = false;
