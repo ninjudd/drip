@@ -44,15 +44,9 @@ For example, to start a Clojure repl with drip:
 
     drip -cp clojure.jar clojure.main
 
+## JVM Language Integration
 
-## With Leiningen
-
-You can use Drip with [Leiningen](https://github.com/technomancy/leiningen) to
-make tasks [faster](https://gist.github.com/3491702). For now, you'll need to
-install Drip and then check out the `drip` branch of Leiningen. Then add the
-following to your `~/.lein/leinrc` file:
-
-    LEIN_JAVA_CMD=drip
-
-Leiningen support for Drip is still experimental, so please report any problems
-you have in #flatland on freenode.
+For more information about how to integrate Drip with your favorite JVM
+language, check out the
+[JVM Language Integration](https://github.com/flatland/drip/wiki/JVM-Language-Integration)
+page on the wiki.
