@@ -179,7 +179,7 @@ function run_main {
 DRIP_POOL=1
 DRIP_HOME=${DRIP_HOME:-~/.drip}
 [ -d $DRIP_HOME ] || mkdir $DRIP_HOME
-DRIP_VERSION=${DRIP_VERSION:-0.0.1}
+DRIP_VERSION=${DRIP_VERSION:-0.0.2}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
 DRIP_URL=${DRIP_URL:-$DRIP_REPO/org/flatland/drip/${DRIP_VERSION}/drip-${DRIP_VERSION}.jar}
 
