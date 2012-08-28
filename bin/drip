@@ -57,8 +57,6 @@ declare -a main_args
 declare -a runtime_args
 
 function parse_args {
-    local classpath=false
-
     if [ 0 -eq $# ]; then
         echo "Usage: drip [same args as java...]"
         exit 0
@@ -66,18 +64,11 @@ function parse_args {
 
     for arg in "$@"; do
         if [ -z $main_class ]; then
-            if $classpath; then
-                classpath=false
-                arg=$DRIP_JAR:$arg
+            if [[ "$arg" != -* ]]; then
+                main_class=$arg
             else
-                if [ "$arg" == "-cp" ] || [ "$arg" == "-classpath" ]; then
-                    classpath=true
-                elif [[ "$arg" != -* ]]; then
-                    main_class=$arg
-                    continue
-                fi
+                jvm_args[${#jvm_args[*]}]=$arg
             fi
-            jvm_args[${#jvm_args[*]}]=$arg
         elif [ -z $runtime ]; then
             if [ "$arg" == "--" ]; then
                 runtime=1
@@ -106,7 +97,7 @@ function launch_jvm {
         mkfifo $dir/out
         mkfifo $dir/err
 
-        java ${jvm_args[*]} org.flatland.drip.Main $main_class $dir &
+        java ${jvm_args[*]} -Xbootclasspath/a:$DRIP_JAR org.flatland.drip.Main $main_class $dir &
         echo $! > $dir/jvm.pid
     fi
 }
