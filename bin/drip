@@ -170,7 +170,6 @@ function send_array {
         printf -- "%s\0" "$e" >&3
     done
     printf "," >&3
-    printf ","
 }
 
 function duplex_stdin {
