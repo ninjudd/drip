@@ -72,7 +72,7 @@ public class Main {
       o.flip();
     }
 
-    String mainArgs = readLine();
+    String mainArgs    = readLine();
     String runtimeArgs = readLine();
     setProperties(runtimeArgs);
 
@@ -86,7 +86,8 @@ public class Main {
   private Method mainMethod(String className)
     throws ClassNotFoundException, NoSuchMethodException {
     if (className != null) {
-      return ClassLoader.getSystemClassLoader().loadClass(className).getMethod("main", String[].class);
+      return Class.forName(className, true, ClassLoader.getSystemClassLoader())
+        .getMethod("main", String[].class);
     } else {
       return null;
     }
