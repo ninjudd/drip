@@ -25,7 +25,7 @@ not the case, you can substitute your favorite location.
 
 **Standalone** &mdash; *We recommend this to get started quickly.*
 
-    curl -L http://decaf.flatland.org > ~/bin/drip
+    curl -L http://drip.flatland.org > ~/bin/drip
     chmod 755 ~/bin/drip
 
 **Checkout** &mdash; *If you want to hack on Drip or follow the latest
