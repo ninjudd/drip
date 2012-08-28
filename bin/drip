@@ -58,6 +58,7 @@ function find_drip_jar {
 
 declare -a jvm_args
 declare -a main_args
+declare -a runtime_args
 
 function parse_args {
     local classpath=false
@@ -81,8 +82,14 @@ function parse_args {
                 fi
             fi
             jvm_args[${#jvm_args[*]}]=$arg
+        elif [ -z $runtime ]; then
+            if [ "$arg" == "--" ]; then
+                runtime=1
+            else
+                main_args[${#main_args[*]}]=$arg
+            fi
         else
-            main_args[${#main_args[*]}]=$arg
+            runtime_args[${#runtime_args[*]}]=$arg
         fi
     done
 }
@@ -139,14 +146,15 @@ function find_jvm {
         for arg in "${main_args[@]}"; do
             argstr=$argstr$(printf -- "%q " "$arg")
         done
-        eval java ${jvm_args[*]} $main_class $argstr
+
+        eval java ${jvm_args[*]} ${runtime_args[@]} $main_class $argstr
         exit $?
     fi
 }
 
 function duplex_stdin {
     exec 3> $fifo/in
-    (IFS=$'\t'; printf -- "${main_args[*]}\n" >&3)
+    (IFS=$'\t'; printf -- "${main_args[*]}\n${runtime_args[*]}\n" >&3)
     cat >&3 2> /dev/null
     exec 3>&-
 }

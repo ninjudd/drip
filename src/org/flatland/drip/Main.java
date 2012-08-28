@@ -3,8 +3,12 @@ import java.lang.reflect.Method;
 import java.io.*;
 import java.util.Scanner;
 import java.util.LinkedList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
+  static private Scanner s;
+
   public static void main(String[] args) throws Exception {
     String class_name = args[0];
     String fifo_dir   = args[1];
@@ -16,7 +20,11 @@ public class Main {
     String init_args  = System.getenv("DRIP_INIT");
     if (init_args != null) mainInvoke(init == null ? main : init, init_args);
 
-    mainInvoke(main, readline());
+    String main_args    = readline();
+    String runtime_args = readline();
+    setProperties(runtime_args);
+
+    mainInvoke(main, main_args);
     System.exit(0);
   }
 
@@ -29,8 +37,8 @@ public class Main {
     }
   }
 
-  public static void mainInvoke(Method main, String argstring) throws Exception {
-    Scanner s = new Scanner(argstring);
+  private static void mainInvoke(Method main, String main_args) throws Exception {
+    Scanner s = new Scanner(main_args);
     s.useDelimiter("\t");
     LinkedList<String> args = new LinkedList<String>();
     while (s.hasNext()) {
@@ -39,17 +47,25 @@ public class Main {
     main.invoke(null, (Object)args.toArray(new String[0]));
   }
 
-  public static void reopenStreams(String fifo_dir) throws FileNotFoundException, IOException {
+  private static void setProperties(String runtime_args) {
+    Matcher m = Pattern.compile("-D([^=]+)=([^\\t]+)").matcher(runtime_args);
+
+    while (m.find()) {
+      System.setProperty(m.group(1), m.group(2));
+    }
+  }
+
+  private static void reopenStreams(String fifo_dir) throws FileNotFoundException, IOException {
     System.in.close();
     System.out.close();
     System.err.close();
     System.setIn(new BufferedInputStream(new DelayedFileInputStream(fifo_dir + "/in")));
     System.setOut(new PrintStream(new DelayedFileOutputStream(fifo_dir + "/out")));
     System.setErr(new PrintStream(new DelayedFileOutputStream(fifo_dir + "/err")));
+    s = new Scanner(System.in);
   }
 
   public static String readline() throws IOException {
-    Scanner s = new Scanner(System.in);
     if (s.hasNextLine()) {
       return s.nextLine();
     } else {
