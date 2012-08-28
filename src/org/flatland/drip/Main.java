@@ -1,6 +1,8 @@
 package org.flatland.drip;
 import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.io.*;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
@@ -53,6 +55,19 @@ public class Main {
     while (m.find()) {
       System.setProperty(m.group(1), m.group(2));
     }
+  }
+
+  private static void setEnv(Map<String, String> newEnv) throws NoSuchFieldException, IllegalAccessException {
+    Map<String, String> env = System.getenv();
+    Class<?> classToHack = env.getClass();
+    if (!(classToHack.getName().equals("java.util.Collections$UnmodifiableMap"))) {
+      throw new RuntimeException("Don't know how to hack " + classToHack);
+    }
+
+    Field field = classToHack.getDeclaredField("m");
+    field.setAccessible(true);
+    field.set(env, newEnv);
+    field.setAccessible(false);
   }
 
   private static void reopenStreams(String fifo_dir) throws FileNotFoundException, IOException {
