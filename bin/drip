@@ -164,10 +164,13 @@ function kill_jvms {
 }
 
 function send_array {
+    local length="$@"
+    printf -- "${#length}:" >&3
     for e; do
         printf -- "%s\0" "$e" >&3
     done
-    printf "\n" >&3
+    printf "," >&3
+    printf ","
 }
 
 function duplex_stdin {
