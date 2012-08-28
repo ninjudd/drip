@@ -56,4 +56,4 @@ following to your `~/.lein/leinrc` file:
     LEIN_JAVA_CMD=drip
 
 Leiningen support for Drip is still experimental, so please report any problems
-you have in #leiningen on freenode.
+you have in #flatland on freenode.
