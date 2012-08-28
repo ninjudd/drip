@@ -17,7 +17,7 @@ public class Main {
   private String fifoDir;
 
   public Main(String className, String fifoDir) {
-    this.className = className;
+    this.className = className.replace('/', '.');
     this.fifoDir = fifoDir;
   }
 
