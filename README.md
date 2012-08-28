@@ -11,7 +11,7 @@ Unlike other tools intended to solve the JVM startup problem (e.g. Nailgun,
 cake, jark), Drip does not use a persistent JVM. There are many pitfalls to
 using a persistent JVM, which we discovered while working on the cake build tool
 for Clojure. The main problem is that the state of the persistent JVM gets dirty
-over time, producing strange errors and requiring liberal use `cake kill`
+over time, producing strange errors and requiring liberal use of `cake kill`
 whenever any error is encountered, *just in case* dirty state is the cause.
 
 Instead of going down this perilous road again, Drip uses a different
@@ -37,7 +37,7 @@ development, this is the way to go.*
 # Usage
 
 You can call `drip` with the same arguments as `java`. Try it. The first time
-you execute `drip` with a new arguments, it will take longer, because it has to
+you execute `drip` with new arguments, it will take longer, because it has to
 spin up a JVM from scratch, but after that it will be fast.
 
 For example, to start a Clojure repl with drip:
