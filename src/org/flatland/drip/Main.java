@@ -5,11 +5,14 @@ import java.io.*;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Main {
   static private Scanner s;
+  static private List<Openable> lazyStreams;
 
   public static void main(String[] args) throws Exception {
     String class_name = args[0];
@@ -27,6 +30,10 @@ public class Main {
     String main_args    = readline();
     String runtime_args = readline();
     setProperties(runtime_args);
+
+    for (Openable o : lazyStreams) {
+      o.forceOpen();
+    }
 
     invoke(main, splitArgs(main_args, "\u0000"));
     System.exit(0);
@@ -81,9 +88,15 @@ public class Main {
     System.in.close();
     System.out.close();
     System.err.close();
-    System.setIn(new BufferedInputStream(new DelayedFileInputStream(fifo_dir + "/in")));
-    System.setOut(new PrintStream(new DelayedFileOutputStream(fifo_dir + "/out")));
-    System.setErr(new PrintStream(new DelayedFileOutputStream(fifo_dir + "/err")));
+
+    DelayedFileInputStream stdin = new DelayedFileInputStream(fifo_dir + "/in");
+    DelayedFileOutputStream stdout = new DelayedFileOutputStream(fifo_dir + "/out");
+    DelayedFileOutputStream stderr = new DelayedFileOutputStream(fifo_dir + "/err");
+    lazyStreams = Arrays.<Openable>asList(stdin, stdout, stderr);
+
+    System.setIn(new BufferedInputStream(stdin));
+    System.setOut(new PrintStream(stdout));
+    System.setErr(new PrintStream(stderr));
     s = new Scanner(System.in);
   }
 

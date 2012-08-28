@@ -1,12 +1,16 @@
 package org.flatland.drip;
 import java.io.*;
 
-public class DelayedFileInputStream extends InputStream {
+public class DelayedFileInputStream extends InputStream implements Openable{
   final String path;
   private FileInputStream fs;
 
   DelayedFileInputStream(String path) {
     this.path = path;
+  }
+
+  public void forceOpen() {
+    fs();
   }
 
   private synchronized FileInputStream fs() {
