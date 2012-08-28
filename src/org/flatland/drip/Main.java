@@ -18,15 +18,17 @@ public class Main {
     reopenStreams(fifo_dir);
     Method main = mainMethod(class_name);
 
-    Method init       = mainMethod(System.getenv("DRIP_INIT_CLASS"));
-    String init_args  = System.getenv("DRIP_INIT");
-    if (init_args != null) mainInvoke(init == null ? main : init, init_args);
+    Method init      = mainMethod(System.getenv("DRIP_INIT_CLASS"));
+    String init_args = System.getenv("DRIP_INIT");
+    if (init_args != null) {
+      invoke(init == null ? main : init, splitArgs(init_args, "\n"));
+    }
 
     String main_args    = readline();
     String runtime_args = readline();
     setProperties(runtime_args);
 
-    mainInvoke(main, main_args);
+    invoke(main, splitArgs(main_args, "\u0000"));
     System.exit(0);
   }
 
@@ -39,18 +41,23 @@ public class Main {
     }
   }
 
-  private static void mainInvoke(Method main, String main_args) throws Exception {
-    Scanner s = new Scanner(main_args);
-    s.useDelimiter("\t");
-    LinkedList<String> args = new LinkedList<String>();
+  private static String[] splitArgs(String args, String delim) {
+    Scanner s = new Scanner(args);
+    s.useDelimiter(delim);
+
+    LinkedList<String> arglist = new LinkedList<String>();
     while (s.hasNext()) {
-      args.add(s.next());
+      arglist.add(s.next());
     }
-    main.invoke(null, (Object)args.toArray(new String[0]));
+    return arglist.toArray(new String[0]);
+  }
+
+  private static void invoke(Method main, String[] args) throws Exception {
+    main.invoke(null, (Object)args);
   }
 
   private static void setProperties(String runtime_args) {
-    Matcher m = Pattern.compile("-D([^=]+)=([^\\t]+)").matcher(runtime_args);
+    Matcher m = Pattern.compile("-D([^=]+)=([^\u0000]+)").matcher(runtime_args);
 
     while (m.find()) {
       System.setProperty(m.group(1), m.group(2));

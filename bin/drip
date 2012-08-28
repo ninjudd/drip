@@ -152,9 +152,17 @@ function find_jvm {
     fi
 }
 
+function send_array {
+    for e; do
+        printf -- "%s\0" "$e" >&3
+    done
+    printf "\n" >&3
+}
+
 function duplex_stdin {
     exec 3> $fifo/in
-    (IFS=$'\t'; printf -- "${main_args[*]}\n${runtime_args[*]}\n" >&3)
+    send_array "${main_args[@]}"
+    send_array "${runtime_args[@]}"
     cat >&3 2> /dev/null
     exec 3>&-
 }
