@@ -57,6 +57,8 @@ declare -a main_args
 declare -a runtime_args
 
 function parse_args {
+    local classpath=false
+
     if [ 0 -eq $# ]; then
         echo "Usage: drip [same args as java...]"
         exit 0
@@ -67,11 +69,17 @@ function parse_args {
 
     for arg in "$@"; do
         if [ -z $main_class ]; then
-            if [[ "$arg" != -* ]]; then
-                main_class=$arg
+            if $classpath; then
+                classpath=false
             else
-                jvm_args[${#jvm_args[*]}]=$arg
+                if [ "$arg" == "-cp" ] || [ "$arg" == "-classpath" ]; then
+                    classpath=true
+                elif [[ "$arg" != -* ]]; then
+                    main_class=$arg
+                    continue
+                fi
             fi
+            jvm_args[${#jvm_args[*]}]=$arg
         elif [ -z $runtime ]; then
             if [ "$arg" == "--" ]; then
                 runtime=1
