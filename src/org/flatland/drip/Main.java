@@ -3,6 +3,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Field;
 import java.io.*;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.LinkedList;
 import java.util.List;
@@ -63,7 +64,7 @@ public class Main {
     Method init = mainMethod(System.getenv("DRIP_INIT_CLASS"));
     String initArgs = System.getenv("DRIP_INIT");
     if (initArgs != null) {
-      invoke(init == null ? main : init, splitArgs(initArgs, "\n"));
+      invoke(init == null ? main : init, split(initArgs, "\n"));
     }
 
     startIdleKiller();
@@ -74,9 +75,12 @@ public class Main {
 
     String mainArgs    = readLine();
     String runtimeArgs = readLine();
+    String environment = readLine();
+
+    mergeEnv(parseEnv(environment));
     setProperties(runtimeArgs);
 
-    invoke(main, splitArgs(mainArgs, "\u0000"));
+    invoke(main, split(mainArgs, "\u0000"));
   }
 
   public static void main(String[] args) throws Exception {
@@ -93,15 +97,15 @@ public class Main {
     }
   }
 
-  private String[] splitArgs(String args, String delim) {
-    Scanner s = new Scanner(args);
+  private String[] split(String str, String delim) {
+    Scanner s = new Scanner(str);
     s.useDelimiter(delim);
 
-    LinkedList<String> arglist = new LinkedList<String>();
+    LinkedList<String> list = new LinkedList<String>();
     while (s.hasNext()) {
-      arglist.add(s.next());
+      list.add(s.next());
     }
-    return arglist.toArray(new String[0]);
+    return list.toArray(new String[0]);
   }
 
   private void invoke(Method main, String[] args) throws Exception {
@@ -116,8 +120,19 @@ public class Main {
     }
   }
 
+  private Map<String, String> parseEnv(String str) {
+    Map<String, String> env = new HashMap<String, String>();
+
+    for (String line: split(str, "\u0000")) {
+      String[] var = line.split("=", 2);
+      env.put(var[0], var[1]);
+    }
+    return env;
+  }
+
   @SuppressWarnings("unchecked") // we're hacking a map with reflection
-  private void mergeEnv(Map<String, String> newEnv) throws NoSuchFieldException, IllegalAccessException {
+  private void mergeEnv(Map<String, String> newEnv)
+    throws NoSuchFieldException, IllegalAccessException {
     Map<String, String> env = System.getenv();
     Class<?> classToHack = env.getClass();
     if (!(classToHack.getName().equals("java.util.Collections$UnmodifiableMap"))) {

@@ -180,10 +180,18 @@ function send_env {
     declare -a vars
 
     local IFS=$'\n'
+    # Call declare in a bash subprocess to get rid of variables that aren't exported.
     for line in $(bash -c 'declare'); do
-        [[ $line == *=\(*\) ]] && continue
-        [[ $line != *=*     ]] && break
-        vars[${#vars[*]}]=$(printf -- "$line")
+        [[ $line == *=\(*\) ]] && continue # Filter bash arrays
+        [[ $line != *=*     ]] && break    # Filter function definitions
+
+        # Filter extra variables that were added by the bash subprocess but are not exported.
+        for var in BASH BASHOPTS BASH_EXECUTION_STRING BASH_VERSION \
+                   SHELLOPTS IFS PS4 UID EUID PPID; do
+            [[ $line == $var=*  ]] && break 2
+        done
+
+        vars[${#vars[*]}]=$(eval echo $line)
     done
 
     send_array "${vars[@]}"
@@ -193,6 +201,7 @@ function duplex_stdin {
     exec 3> $fifo/in
     send_array "${main_args[@]}"
     send_array "${runtime_args[@]}"
+    send_env
     cat >&3 2> /dev/null
     exec 3>&-
 }
