@@ -142,10 +142,24 @@ public class Main {
   }
 
   private String readLine() throws IOException {
-    if (s.hasNextLine()) {
-      return s.nextLine();
+    s.useDelimiter(":");
+    int numChars = s.nextInt();
+    s.skip(":");
+
+    String arg;
+    if (numChars == 0) { // horizon treats 0 as "unbounded"
+      arg = "";
     } else {
-      return "";
+      arg = s.findWithinHorizon(".+", numChars);
+      if (arg.length() != numChars) {
+        throw new IOException("Expected " + numChars + " characters but found only " + arg.length() + " in string: \"" + arg + "\"");
+      }
     }
+
+    String terminator = s.findWithinHorizon(",", 1);
+    if (!(terminator.equals(","))) {
+      throw new IOException("Instead of comma terminator after \"" + arg + "\", found " + terminator);
+    }
+    return arg;
   }
 }
