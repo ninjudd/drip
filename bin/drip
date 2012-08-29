@@ -116,7 +116,7 @@ function launch_jvm {
 
 function lock_dir {
     if mkdir $dir/lock 2> /dev/null; then
-        if [ ! -z $1 ] || kill -0 $(cat $dir/jvm.pid) 2> /dev/null; then
+        if kill -0 $(cat $dir/jvm.pid) 2> /dev/null; then
             echo $$ > $dir/client.pid
             fifo=$dir
         fi
