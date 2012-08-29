@@ -155,12 +155,17 @@ function find_jvm {
 }
 
 function kill_jvms {
+    local killed;
     for dir in $DRIP_HOME/*/*-*; do
         if lock_dir; then
             kill $(cat $dir/jvm.pid) $1 2> /dev/null
             rm -rf $dir
+            killed=1
         fi
     done
+    if [ -z $killed ]; then
+        echo "No Drip JVM running"
+    fi
 }
 
 function send_array {
