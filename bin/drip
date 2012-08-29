@@ -176,6 +176,19 @@ function send_array {
     printf -- "," >&3
 }
 
+function send_env {
+    declare -a vars
+
+    local IFS=$'\n'
+    for line in $(bash -c 'declare'); do
+        [[ $line == *=\(*\) ]] && continue
+        [[ $line != *=*     ]] && break
+        vars[${#vars[*]}]=$(printf -- "$line")
+    done
+
+    send_array "${vars[@]}"
+}
+
 function duplex_stdin {
     exec 3> $fifo/in
     send_array "${main_args[@]}"
