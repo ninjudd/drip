@@ -194,7 +194,7 @@ function send_env {
         # Filter extra variables that were added by the bash subprocess but are not exported.
         for var in BASH BASHOPTS BASH_EXECUTION_STRING BASH_VERSION \
                    SHELLOPTS IFS PS4 UID EUID PPID; do
-            [[ $line == $var=*  ]] && break 2
+            [[ $line == $var=*  ]] && continue 2
         done
 
         vars[${#vars[*]}]=$(eval echo $line)
