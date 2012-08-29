@@ -62,7 +62,8 @@ function parse_args {
     if [ 0 -eq $# ]; then
         echo "Usage: drip [same args as java...]"
         exit 0
-    elif [ 1 -eq $# ] && [[ "$1" != *.* ]]; then
+    elif ([ 1 -eq $# ] && [[ "$1" != *.* ]]) ||
+         ([ 2 -eq $# ] && [ "$1" == 'kill' ] && [[ "$2" == -* ]]); then
         drip_command=$1
         return
     fi
@@ -156,7 +157,7 @@ function find_jvm {
 function kill_jvms {
     for dir in $DRIP_HOME/*/*-*; do
         if lock_dir; then
-            kill $(cat $dir/jvm.pid) 2> /dev/null
+            kill $(cat $dir/jvm.pid) $1 2> /dev/null
             rm -rf $dir
         fi
     done
@@ -220,7 +221,7 @@ function run_drip_command {
             java -version
             ;;
         kill)
-            kill_jvms
+            kill_jvms $2
             ;;
         ps)
             jps -vlm | grep org.flatland.drip.Main
