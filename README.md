@@ -37,8 +37,8 @@ development, this is the way to go.*
 # Usage
 
 You can call `drip` with the same arguments as `java`. Try it. The first time
-you execute `drip` with new arguments, it will take longer, because it has to
-spin up a JVM from scratch, but after that it will be fast.
+you execute `drip` with new arguments, it will take as long as a plain `java` command,
+because it has to spin up a JVM from scratch, but after that it will be fast.
 
 For example, to start a Clojure repl with drip:
 
