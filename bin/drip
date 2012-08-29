@@ -156,7 +156,7 @@ function find_jvm {
 function kill_jvms {
     for dir in $DRIP_HOME/*/*-*; do
         if lock_dir; then
-            kill $(cat $dir/jvm.pid)
+            kill $(cat $dir/jvm.pid) 2> /dev/null
             rm -rf $dir
         fi
     done
