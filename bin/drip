@@ -1,14 +1,7 @@
 #!/usr/bin/env bash
 
 function script_name { # Adapted from http://github.com/technomancy/leiningen
-    local script
-
-    # normalize $0 on certain BSDs
-    if [ "$(dirname "$0")" = "." ]; then
-        script="$(which $(basename "$0"))"
-    else
-        script="$0"
-    fi
+    local script="$0"
 
     # resolve symlinks to the script itself portably
     while [ -h "$script" ] ; do
@@ -41,7 +34,7 @@ function find_drip_jar {
         bin_dir=$(dirname $(script_name))
         if [ -r $bin_dir/../src/org/flatland/drip/Main.java ]; then
             # Checkout
-            drip_dir=$(dirname $bin_dir)
+            drip_dir=$bin_dir/..
             DRIP_JAR=$drip_dir/drip.jar
             (cd $drip_dir && make -s jar)
         else
