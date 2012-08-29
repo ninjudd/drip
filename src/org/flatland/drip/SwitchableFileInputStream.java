@@ -1,6 +1,7 @@
 package org.flatland.drip;
 import java.io.*;
 
+// not safe to use flip() while any other threads are accessing this object in any way
 public class SwitchableFileInputStream extends InputStream implements Switchable {
   private final File pathToNewIn;
 
@@ -13,7 +14,7 @@ public class SwitchableFileInputStream extends InputStream implements Switchable
     this.switched = false;
   }
 
-  public synchronized void flip() throws IllegalStateException, IOException {
+  public void flip() throws IllegalStateException, IOException {
     if (switched) {
       throw new IllegalStateException("Already switched to secondary input");
     }
