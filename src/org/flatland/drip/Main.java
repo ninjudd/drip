@@ -116,7 +116,8 @@ public class Main {
     }
   }
 
-  private void setEnv(Map<String, String> newEnv) throws NoSuchFieldException, IllegalAccessException {
+  @SuppressWarnings("unchecked") // we're hacking a map with reflection
+  private void mergeEnv(Map<String, String> newEnv) throws NoSuchFieldException, IllegalAccessException {
     Map<String, String> env = System.getenv();
     Class<?> classToHack = env.getClass();
     if (!(classToHack.getName().equals("java.util.Collections$UnmodifiableMap"))) {
@@ -125,7 +126,7 @@ public class Main {
 
     Field field = classToHack.getDeclaredField("m");
     field.setAccessible(true);
-    field.set(env, newEnv);
+    ((Map<String,String>)field.get(env)).putAll(newEnv);
     field.setAccessible(false);
   }
 
