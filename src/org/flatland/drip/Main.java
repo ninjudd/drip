@@ -141,6 +141,7 @@ public class Main {
     s = new Scanner(System.in);
   }
 
+  private static final Pattern EVERYTHING = Pattern.compile(".+", Pattern.DOTALL);
   private String readLine() throws IOException {
     s.useDelimiter(":");
     int numChars = s.nextInt();
@@ -150,7 +151,7 @@ public class Main {
     if (numChars == 0) { // horizon treats 0 as "unbounded"
       arg = "";
     } else {
-      arg = s.findWithinHorizon(".+", numChars);
+      arg = s.findWithinHorizon(EVERYTHING, numChars);
       if (arg.length() != numChars) {
         throw new IOException("Expected " + numChars + " characters but found only " + arg.length() + " in string: \"" + arg + "\"");
       }
