@@ -5,8 +5,8 @@ function script_name { # Adapted from http://github.com/technomancy/leiningen
 
     # resolve symlinks to the script itself portably
     while [ -h "$script" ] ; do
-        ls=`ls -ld "$script"`
-        link=`expr "$ls" : '.*-> \(.*\)$'`
+        ls=$(ls -ld "$script")
+        link=$(expr "$ls" : '.*-> \(.*\)$')
         if expr "$link" : '/.*' > /dev/null; then
             script="$link"
         else
