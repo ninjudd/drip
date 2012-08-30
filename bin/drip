@@ -102,7 +102,7 @@ function launch_jvm {
         mkfifo $dir/out
         mkfifo $dir/err
 
-        java ${jvm_args[*]} -Xbootclasspath/a:$DRIP_JAR org.flatland.drip.Main $main_class $dir &
+        java ${jvm_args[*]} -Xbootclasspath/a:$DRIP_JAR org.flatland.drip.Main $main_class $dir > /dev/null &
         echo $! > $dir/jvm.pid
     fi
 }
