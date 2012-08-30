@@ -215,7 +215,7 @@ function run_main {
 function run_drip_command {
     case $drip_command in
         version)
-            echo "drip version \"$DRIP_VERSION\""
+            echo "drip version \"$DRIP_VERSION\"" >&2
             java -version
             ;;
         kill)

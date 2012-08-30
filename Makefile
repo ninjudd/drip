@@ -25,5 +25,7 @@ install: jar
 release: jar
 	scp ${JAR} pom.xml clojars@clojars.org:
 
+test: jar
+	./test/test
 
 .PHONY: all jar compile clean install release

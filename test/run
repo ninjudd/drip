@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+tests=0
+passed=0
+failed=0
+
+function passed {
+    let passed=passed+1
+}
+
+function failed {
+    let failed=failed+1
+    echo
+    echo " $failed) FAILURE in $test"
+    stacktrace 1
+}
+
+function assert {
+    if eval "$@"; then
+        passed
+    else
+        failed
+        echo " assertion failed: $@"
+    fi
+}
+
+function assert_equal {
+    if [ "$1" == "$2" ]; then
+        passed
+    else
+        failed
+        echo " expected: $1"
+        echo "   actual: $2"
+    fi
+}
+
+function assert_match {
+    if [[ "$2" =~ $1 ]]; then
+        passed
+    else
+        failed
+        echo " match failed"
+        echo " expected =~ $1"
+        echo "   actual    $2"
+    fi
+}
+
+function stacktrace() {
+  let frame=$1+1
+
+  while caller=$(caller $frame); do
+    local line=$(expr "$caller" : '\([0-9]*\)')
+    local func=$(expr "$caller" : '[0-9]* \([^ ]*\)')
+    local file=$(expr "$caller" : '[0-9]* [^ ]* \([^ ]*\)')
+    echo "     $file:$line in $func"
+    ((frame++))
+  done
+}
+
+function test_results {
+    echo
+    echo "Ran $tests tests containing $((passed + failed)) assertions."
+    echo "$failed failures."
+
+    if [ $failed != 0 ]; then
+        echo "Tests failed."
+    fi
+}
+
+function run_all_tests {
+    pushd $(dirname $0) > /dev/null
+    for test_file in */**; do
+        [[ $test_file =~ ^[[:alnum:]_/]*$ ]] || continue
+        echo
+        echo $0 $test_file
+        source $test_file
+
+        while read line; do
+            if test=$(expr "$line" : 'function \(test_[^ ]*\) {'); then
+                let tests=tests+1
+                eval $test
+            fi        
+        done < $test_file
+    done
+    popd > /dev/null
+}
+
+run_all_tests
+test_results
