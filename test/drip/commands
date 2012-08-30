@@ -1,6 +1,4 @@
 function test_version_command {
-    testing "version command"
-
     assert_match "^drip version" "$(../bin/drip version 2>&1)"
 
     assert true
