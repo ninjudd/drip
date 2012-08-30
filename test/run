@@ -69,8 +69,10 @@ function test_results {
 
 function run_all_tests {
     pushd $(dirname $0) > /dev/null
-    for test_file in */**; do
-        [[ $test_file =~ ^[[:alnum:]_/]*$ ]] || continue
+
+    for test_file in $(find . -type f); do
+        [ $test_file == './run' ] && continue
+        [[ $test_file =~ ^./[[:alnum:]_/]*$ ]] || continue
         echo
         echo $0 $test_file
         source $test_file
