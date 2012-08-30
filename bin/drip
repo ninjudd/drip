@@ -157,7 +157,7 @@ function kill_jvms {
         fi
     done
     if [ -z $killed ]; then
-        echo "No Drip JVM running"
+        echo "No idle Drip JVM running"
     fi
 }
 
