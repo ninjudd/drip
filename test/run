@@ -68,11 +68,14 @@ function test_results {
 }
 
 function run_all_tests {
-    pushd $(dirname $0) > /dev/null
+    cd $(dirname $0)
+    source ./helpers/init.sh
 
-    for test_file in $(find . -type f); do
-        [ $test_file == './run' ] && continue
-        [[ $test_file =~ ^./[[:alnum:]_/]*$ ]] || continue
+    files=${1:-$(find . \( -name helpers -prune -or -name \*.sh \) -type f)}
+    for test_file in $files; do
+        [[ $test_file =~ \# ]] && continue
+        [[ $test_file == *.sh ]] || test_file=$test_file.sh
+
         echo
         echo $0 $test_file
         source $test_file
@@ -84,8 +87,8 @@ function run_all_tests {
             fi        
         done < $test_file
     done
-    popd > /dev/null
+    cd - > /dev/null
 }
 
-run_all_tests
+run_all_tests "$@"
 test_results
