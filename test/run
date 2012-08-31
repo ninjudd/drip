@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-tests=0
-passed=0
-failed=0
+test_count=0
+pass_count=0
+fail_count=0
 
 function passed {
-    let passed=passed+1
+    let pass_count=pass_count+1
     printf '.'
 }
 
 function failed {
-    let failed=failed+1
+    let fail_count=fail_count+1
     echo
-    echo " $failed) FAILURE in $test"
+    echo " $fail_count) FAILURE in $test"
     stacktrace 1
 }
 
@@ -21,7 +21,8 @@ function assert {
         passed
     else
         failed
-        echo " assertion failed: $@"
+        echo " assertion failed"
+        echo " non-zero exit: $@"
     fi
 }
 
@@ -60,10 +61,10 @@ function stacktrace {
 
 function test_results {
     echo
-    echo "Ran $tests tests containing $((passed + failed)) assertions."
-    echo "$failed failures."
+    echo "Ran $test_count tests containing $((pass_count + fail_count)) assertions."
+    echo "$fail_count failures."
 
-    if [[ $failed -ne 0 ]]; then
+    if [[ $fail_count -ne 0 ]]; then
         echo "Tests failed."
     fi
 }
@@ -80,10 +81,10 @@ function run_all_tests {
     done < <(find . \( -name helpers -prune -or -name \*.sh \) -type f -print0)
 
     for file in "${files[@]}"; do
-        local functions=()
+        local tests=()
         while read -r line; do
-            if function=$(expr "$line" : 'function \(test_[^ ]*\) {'); then
-                functions+=("$function")
+            if fn=$(expr "$line" : 'function \(test_[^ ]*\) {'); then
+                tests+=("$fn")
             fi
         done < "$file"
 
@@ -91,9 +92,9 @@ function run_all_tests {
         printf "%s %s\n" "$0" "$(basename $file .sh)"
         source "$file"
 
-        for f in "${functions[@]}"; do
-            let tests=tests+1
-            $f
+        for test in "${tests[@]}"; do
+            ((test_count++))
+            $test
         done
     done
 
