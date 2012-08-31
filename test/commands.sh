@@ -8,7 +8,7 @@ function test_kill_command {
     drip kill > /dev/null
     assert_equal "No idle Drip JVM running" "$(drip kill)"
 
-    drip -cp tmp/clojure.jar clojure.main -e ':foo' > /dev/null
+    assert drip -cp clojure.jar clojure.main -e 'nil'
 
     assert_equal "" "$(drip kill)"
     assert_equal "No idle Drip JVM running" "$(drip kill)"

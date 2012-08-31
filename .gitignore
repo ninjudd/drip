@@ -1,4 +1,5 @@
 *~
 *.class
 *.jar
-test/tmp
+*.tgz
+test/scala
