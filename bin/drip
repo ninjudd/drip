@@ -131,7 +131,7 @@ function find_jvm {
 
     n=${n:-0}
 
-    while [[ $n -lt $DRIP_POOL ]]; do
+    while (( $n < $DRIP_POOL )); do
         let n=$n+1
         launch_jvm
     done
@@ -158,7 +158,7 @@ function kill_jvms {
 function send_array {
     local string=$*
     local length=${#string}
-    [[ $length -ne 0 ]] && let length=length+1
+    (( $length != 0 )) && let length=length+1
 
     printf '%s:' "$length" >&3
     for e; do

@@ -45,7 +45,7 @@ function assert_match {
     fi
 }
 
-function stacktrace() {
+function stacktrace {
   let frame=$1+1
 
   while caller=$(caller $frame); do
