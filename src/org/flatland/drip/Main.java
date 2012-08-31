@@ -14,12 +14,12 @@ import java.util.regex.Pattern;
 public class Main {
   private Scanner s;
   private List<Switchable> lazyStreams;
-  private String className;
+  private String mainClass;
   private File fifoDir;
 
-  public Main(String className, String fifoDir) {
-    this.className = className.replace('/', '.');
-    this.fifoDir = new File(fifoDir);
+  public Main(String mainClass, String fifoDir) {
+    this.mainClass = mainClass.replace('/', '.');
+    this.fifoDir  = new File(fifoDir);
   }
 
   private void killAfterTimeout() {
@@ -59,13 +59,21 @@ public class Main {
 
   public void start() throws Exception {
     reopenStreams();
-    Method main = mainMethod(className);
 
-    Method init = mainMethod(System.getenv("DRIP_INIT_CLASS"));
-    String initArgs = System.getenv("DRIP_INIT");
-    if (initArgs != null) {
-      invoke(init == null ? main : init, split(initArgs, "\n"));
+    Method main = mainMethod(mainClass);
+
+    String initClass = System.getenv("DRIP_INIT_CLASS");
+    String initArgs  = System.getenv("DRIP_INIT");
+    Method init;
+
+    if (initClass == null) {
+      init = main;
+      initClass = mainClass;
+    } else {
+      init = mainMethod(initClass);
     }
+    if (initArgs == null) initArgs = defaultInitArgs(initClass);
+    if (initArgs != null) invoke(init, split(initArgs, "\n"));
 
     startIdleKiller();
 
@@ -97,19 +105,33 @@ public class Main {
     }
   }
 
-  private String[] split(String str, String delim) {
-    Scanner s = new Scanner(str);
-    s.useDelimiter(delim);
-
-    LinkedList<String> list = new LinkedList<String>();
-    while (s.hasNext()) {
-      list.add(s.next());
+  private String defaultInitArgs(String className) {
+    if (className.equals("org.jruby.Main") || className.equals("clojure.main")) {
+      return "-e\nnil";
+    } else {
+      return null;
     }
-    return list.toArray(new String[0]);
+  }
+
+  private String[] split(String str, String delim) {
+    if (str.length() == 0) {
+      return null;
+    } else {
+      Scanner s = new Scanner(str);
+      s.useDelimiter(delim);
+
+      LinkedList<String> list = new LinkedList<String>();
+      while (s.hasNext()) {
+        list.add(s.next());
+      }
+      return list.toArray(new String[0]);
+    }
   }
 
   private void invoke(Method main, String[] args) throws Exception {
-    main.invoke(null, (Object)args);
+    if (args != null) {
+      main.invoke(null, (Object)args);
+    }
   }
 
   private void setProperties(String runtimeArgs) {
