@@ -103,6 +103,7 @@ function launch_jvm {
         java "${jvm_args[@]}" "-Xbootclasspath/a:$DRIP_JAR" \
              org.flatland.drip.Main "$main_class" "$jvm_dir" > /dev/null &
         echo $! > "$jvm_dir/jvm.pid"
+        disown %%
     fi
 }
 
@@ -160,11 +161,11 @@ function send_array {
     local length=${#string}
     (( $length != 0 )) && let length=length+1
 
-    printf '%s:' "$length" >&3
+    printf '%s:' "$length"
     for e; do
-        printf -- '%s\0' "$e" >&3
+        printf -- '%s\0' "$e"
     done
-    printf ',' >&3
+    printf ','
 }
 
 function send_env {
@@ -187,19 +188,27 @@ function send_env {
     send_array "${vars[@]}"
 }
 
-function duplex_stdin {
-    exec 3> "$active_jvm_dir/in"
+function send_args {
     send_array "${main_args[@]}"
     send_array "${runtime_args[@]}"
     send_env
-    cat >&3 2> /dev/null
-    exec 3>&-
 }
 
-function run_main {
-    duplex_stdin <&0 &
+function duplex_streams {(
+    # run in subshell to avoid Terminated message
     cat "$active_jvm_dir/err" >&2 &
+    cat <&0 >&3 &
     cat "$active_jvm_dir/out"
+    kill %%
+)}
+
+function run_main {
+    exec 3> "$active_jvm_dir/in"
+
+    send_args >&3
+    duplex_streams
+    wait
+
     rm -rf "$active_jvm_dir"
 }
 

@@ -6,6 +6,7 @@ failed=0
 
 function passed {
     let passed=passed+1
+    printf '.'
 }
 
 function failed {
@@ -25,13 +26,13 @@ function assert {
 }
 
 function assert_equal {
-    if [[ $1 == "$2" ]]; then
-        passed
-    else
-        failed
-        echo " expected: $1"
-        echo "   actual: $2"
-    fi
+   if [[ $1 == "$2" ]]; then
+       passed
+   else
+       failed
+       echo " expected: $1"
+       echo "   actual: $2"
+   fi
 }
 
 function assert_match {
@@ -71,21 +72,30 @@ function run_all_tests {
     cd $(dirname $0)
     source ./helpers/init.sh
 
+    local files=()
     while read -r -d '' file; do
         [[ $file =~ \# ]] && continue
         [[ -z $1 || $file == *$1* ]] || break
-        
+        files+=("$file")
+    done < <(find . \( -name helpers -prune -or -name \*.sh \) -type f -print0)
+
+    for file in "${files[@]}"; do
+        local functions=()
+        while read -r line; do
+            if function=$(expr "$line" : 'function \(test_[^ ]*\) {'); then
+                functions+=("$function")
+            fi
+        done < "$file"
+
         echo
         printf "%s %s\n" "$0" "$(basename $file .sh)"
         source "$file"
 
-        while read -r line; do
-            if fn=$(expr "$line" : 'function \(test_[^ ]*\) {'); then
-                let tests=tests+1
-                eval "$fn"
-            fi
-        done < "$file"
-    done < <(find . \( -name helpers -prune -or -name \*.sh \) -type f -print0)
+        for f in "${functions[@]}"; do
+            let tests=tests+1
+            $f
+        done
+    done
 
     cd - > /dev/null
 }
