@@ -101,7 +101,8 @@ function launch_jvm {
         mkfifo "$jvm_dir/out"
         mkfifo "$jvm_dir/err"
 
-        java "${jvm_args[@]}" "-Xbootclasspath/a:$DRIP_JAR" org.flatland.drip.Main "$main_class" "$jvm_dir" > /dev/null &
+        java "${jvm_args[@]}" "-Xbootclasspath/a:$DRIP_JAR" \
+             org.flatland.drip.Main "$main_class" "$jvm_dir" > /dev/null &
         echo $! > "$jvm_dir/jvm.pid"
     fi
 }
