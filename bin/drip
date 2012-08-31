@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function http_get { # Adapted from http://github.com/technomancy/leiningen
-    if [ -z "$http_get" ]; then
+    if [[ -z $http_get ]]; then
         if type -p curl >/dev/null 2>&1; then
             http_get=curl -f -L -o
         else
@@ -18,7 +18,7 @@ function find_drip_jar {
 
     # Adapted from http://github.com/technomancy/leiningen
     # resolve symlinks to the script itself portably
-    while [ -h "$script" ] ; do
+    while [[ -h $script ]] ; do
         local ls=$(ls -ld -- "$script")
         local link=$(expr "$ls" : '.*-> \(.*\)$')
         if expr "$link" : '/.*' > /dev/null; then
@@ -28,9 +28,9 @@ function find_drip_jar {
         fi
     done
 
-    if [ -z "$DRIP_JAR" ]; then
+    if [[ -z $DRIP_JAR ]]; then
         local bin_dir=$(dirname $script)
-        if [ -r "$bin_dir/../src/org/flatland/drip/Main.java" ]; then
+        if [[ -r $bin_dir/../src/org/flatland/drip/Main.java ]]; then
             # Checkout
             local drip_dir=$bin_dir/..
             DRIP_JAR=$drip_dir/drip.jar
@@ -38,7 +38,7 @@ function find_drip_jar {
         else
             # Standalone
             DRIP_JAR=~/.m2/repository/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar
-            [ -e "$DRIP_JAR" ] || http_get "$DRIP_JAR" "$DRIP_URL"
+            [[ -e $DRIP_JAR ]] || http_get "$DRIP_JAR" "$DRIP_URL"
         fi
     fi
 }
@@ -51,23 +51,22 @@ function parse_args {
     local classpath=false
     local runtime=false
 
-    if [ 0 -eq "$#" ]; then
+    if [[ $# -eq 0 ]]; then
         echo "Usage: drip [same args as java...]"
         exit 0
-    elif ([ 1 -eq "$#" ] && [[ "$1" != *.* ]]) ||
-         ([ 2 -eq "$#" ] && [ "$1" == 'kill' ] && [[ "$2" == -* ]]); then
+    elif [[ $# -eq 1 && $1 != *.* || $# -eq 2 && $1 == 'kill' && $2 == -* ]]; then
         drip_command=$1
         return
     fi
 
     for arg in "$@"; do
-        if [ -z "$main_class" ]; then
+        if [[ -z $main_class ]]; then
             if $classpath; then
                 classpath=false
             else
-                if [ "$arg" == "-cp" ] || [ "$arg" == "-classpath" ]; then
+                if [[ $arg == "-cp" || $arg == "-classpath" ]]; then
                     classpath=true
-                elif [[ "$arg" != -* ]]; then
+                elif [[ $arg != -* ]]; then
                     main_class=$arg
                     continue
                 fi
@@ -76,7 +75,7 @@ function parse_args {
         elif $runtime; then
             runtime_args+=("$arg")
         else
-            if [ "$arg" == "--" ]; then
+            if [[ $arg == "--" ]]; then
                 runtime=true
             else
                 main_args+=("$arg")
@@ -123,21 +122,21 @@ function find_jvm {
     make_sha_path
 
     for jvm_dir in $sha_path/*-*; do
-        if [ -z "$active_jvm_dir" ]; then
+        if [[ -z $active_jvm_dir ]]; then
             lock_dir
-        elif [ ! -e "$jvm_dir/lock" ]; then
+        elif [[ ! -e $jvm_dir/lock ]]; then
             let n=$n+1
         fi
     done
 
     n=${n:-0}
 
-    while [ "$n" -lt "$DRIP_POOL" ]; do
+    while [[ $n -lt $DRIP_POOL ]]; do
         let n=$n+1
         launch_jvm
     done
 
-    if [ -z "$active_jvm_dir" ]; then
+    if [[ -z $active_jvm_dir ]]; then
         exec java "${jvm_args[@]}" "${runtime_args[@]}" "$main_class" "${main_args[@]}"
     fi
 }
@@ -159,9 +158,7 @@ function kill_jvms {
 function send_array {
     local string=$*
     local length=${#string}
-    if [ "$length" != 0 ]; then
-        let length=length+1
-    fi
+    [[ $length -ne 0 ]] && let length=length+1
 
     printf '%s:' "$length" >&3
     for e; do
@@ -175,8 +172,8 @@ function send_env {
 
     # Call declare in a bash subprocess to get rid of variables that aren't exported.
     while read -r line; do
-        [[ "$line" == *=\(*\) ]] && continue # Filter bash arrays
-        [[ "$line" != *=*     ]] && break    # Filter function definitions
+        [[ $line == *=\(*\) ]] && continue # Filter bash arrays
+        [[ $line != *=*     ]] && break    # Filter function definitions
 
         # Filter extra variables that were added by the bash subprocess but are not exported.
         for var in BASH BASHOPTS BASH_EXECUTION_STRING BASH_VERSION \
@@ -228,7 +225,7 @@ function run_drip_command {
 
 DRIP_POOL=1
 DRIP_HOME=${DRIP_HOME:-~/.drip} # what if this starts with a dash?
-[ -d "$DRIP_HOME" ] || mkdir "$DRIP_HOME"
+[[ -d $DRIP_HOME ]] || mkdir "$DRIP_HOME"
 DRIP_VERSION=${DRIP_VERSION:-0.0.3}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
 DRIP_URL=${DRIP_URL:-$DRIP_REPO/org/flatland/drip/${DRIP_VERSION}/drip-${DRIP_VERSION}.jar}
@@ -237,7 +234,7 @@ find_drip_jar
 
 parse_args "$@"
 
-if [ -z $drip_command ]; then
+if [[ -z $drip_command ]]; then
     find_jvm
     run_main
 else

@@ -25,7 +25,7 @@ function assert {
 }
 
 function assert_equal {
-    if [ "$1" == "$2" ]; then
+    if [[ $1 == "$2" ]]; then
         passed
     else
         failed
@@ -35,7 +35,7 @@ function assert_equal {
 }
 
 function assert_match {
-    if [[ "$2" =~ $1 ]]; then
+    if [[ $2 =~ $1 ]]; then
         passed
     else
         failed
@@ -62,7 +62,7 @@ function test_results {
     echo "Ran $tests tests containing $((passed + failed)) assertions."
     echo "$failed failures."
 
-    if [ $failed != 0 ]; then
+    if [[ $failed -ne 0 ]]; then
         echo "Tests failed."
     fi
 }
@@ -72,8 +72,8 @@ function run_all_tests {
     source ./helpers/init.sh
 
     while read -r -d '' file; do
-        [[ "$file" =~ \# ]] && continue
-        [[ "$file" == *.sh ]] || file=$file.sh
+        [[ $file =~ \# ]] && continue
+        [[ $file == *.sh ]] || file=$file.sh
 
         echo
         printf "%s %s\n" "$0" "$file"
