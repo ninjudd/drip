@@ -33,16 +33,16 @@ JRUBY_URL=http://jruby.org.s3.amazonaws.com/downloads/1.6.7.2/jruby-complete-1.6
 SCALA_URL=http://www.scala-lang.org/downloads/distrib/files/scala-2.9.2.tgz
 
 test/clojure.jar:
-	curl -# ${CLOJURE_URL} > test/clojure.jar
+	curl -# ${CLOJURE_URL} > $@
 
 test/jruby.jar:
-	curl -# ${JRUBY_URL} > test/jruby.jar
+	curl -# ${JRUBY_URL} > $@
 
 test/scala.tgz:
-	curl -# ${SCALA_URL} > test/scala.tgz
+	curl -# ${SCALA_URL} > $@
 
 test/scala: test/scala.tgz
-	tar -xzf test/scala.tgz -C test
-	mv test/scala-* test/scala
+	tar xzf $< -m -C test
+	mv test/scala-* $@
 
 .PHONY: all jar compile clean install release
