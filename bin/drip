@@ -87,7 +87,7 @@ function parse_args {
 function make_sha_path {
     opts="${jvm_args[*]} $main_class"
     sha=$(echo -n "$opts" | git hash-object --stdin)
-    sha_path=$DRIP_HOME/$sha
+    sha_path=$DRIP_HOME/$DRIP_VERSION/$sha
     mkdir -p "$sha_path"
     echo -n "$opts" > $sha_path/opts
 }
@@ -145,7 +145,7 @@ function find_jvm {
 function kill_jvms {
     local killed=false
 
-    for jvm_dir in $DRIP_HOME/*/*-*; do
+    for jvm_dir in $DRIP_HOME/*/*/*-*; do
         if lock_dir; then
             kill "$1" "$(cat $jvm_dir/jvm.pid)" 2> /dev/null
             rm -rf "$jvm_dir"
@@ -234,7 +234,6 @@ function run_drip_command {
 
 DRIP_POOL=1
 DRIP_HOME=${DRIP_HOME:-~/.drip} # what if this starts with a dash?
-[[ -d $DRIP_HOME ]] || mkdir "$DRIP_HOME"
 DRIP_VERSION=${DRIP_VERSION:-0.0.3}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
 DRIP_URL=${DRIP_URL:-$DRIP_REPO/org/flatland/drip/${DRIP_VERSION}/drip-${DRIP_VERSION}.jar}
