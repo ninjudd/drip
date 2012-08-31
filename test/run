@@ -73,10 +73,10 @@ function run_all_tests {
 
     while read -r -d '' file; do
         [[ $file =~ \# ]] && continue
-        [[ $file == *.sh ]] || file=$file.sh
-
+        [[ -z $1 || $file == *$1* ]] || break
+        
         echo
-        printf "%s %s\n" "$0" "$file"
+        printf "%s %s\n" "$0" "$(basename $file .sh)"
         source "$file"
 
         while read -r line; do
