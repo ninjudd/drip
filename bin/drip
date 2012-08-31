@@ -194,18 +194,23 @@ function send_args {
     send_env
 }
 
+function duplex_stdin {
+    # This has to be in a separate function so we can close the fifo when we get Ctrl-D.
+    exec 3> "$active_jvm_dir/in"
+    send_args >&3
+    cat >&3 2> /dev/null
+    exec 3>&-
+}
+
 function duplex_streams {(
     # run in subshell to avoid Terminated message
+    duplex_stdin <&0 &
     cat "$active_jvm_dir/err" >&2 &
-    cat <&0 >&3 &
     cat "$active_jvm_dir/out"
     kill %%
 )}
 
 function run_main {
-    exec 3> "$active_jvm_dir/in"
-
-    send_args >&3
     duplex_streams
     wait
 
