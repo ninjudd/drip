@@ -17,7 +17,7 @@ whenever any error is encountered, *just in case* dirty state is the cause.
 Instead of going down this road, Drip uses a different strategy. It keeps a
 fresh JVM spun up in reserve with the correct classpath and other JVM options
 so you can quickly connect and use it when needed. Drip hashes the JVM options
-and storing information about how to connect to that JVM in a directory with
+and stores information about how to connect to that JVM in a directory with
 the hash value as its name.
 
 # Installation
