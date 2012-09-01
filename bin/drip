@@ -52,7 +52,13 @@ function parse_args {
     local runtime=false
 
     if [[ $# -eq 0 ]]; then
-        echo "Usage: drip [same args as java...]"
+        echo 'Usage: drip [command | same args as java]'
+        echo
+        echo 'drip supports the following commands:'
+        echo '    version          print drip version and exit'
+        echo '    upgrade          upgrade drip to the latest version'
+        echo '    kill [-signal]   kill all idle drip JVMs (with signal)'
+        echo '    ps               print a list of all drip processes'
         exit 0
     elif ! expr "$1" : '.*[.-]' > /dev/null; then
         drip_command=$1
