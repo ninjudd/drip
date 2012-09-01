@@ -204,8 +204,8 @@ function duplex_stdin {
 
 function duplex_streams {(
     # run in subshell to avoid Terminated message
-    duplex_stdin <&0 &
     cat "$active_jvm_dir/err" >&2 &
+    duplex_stdin <&0 &
     cat "$active_jvm_dir/out"
     kill %%
 )}
