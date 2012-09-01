@@ -20,3 +20,12 @@ function test_exit_status {
     drip -cp clojure.jar clojure.main -e 'invalid' 2> /dev/null
     assert_equal 1 $?
 }
+
+function test_speed_increase {
+    drip kill > /dev/null
+
+    one="$(bench drip -cp clojure.jar clojure.main -e '(* 1 2)')"
+    two="$(bench drip -cp clojure.jar clojure.main -e '(* 1 2)')"
+
+    assert [[ $(($one / 5)) -gt $two ]]
+}
