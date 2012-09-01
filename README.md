@@ -14,9 +14,11 @@ for Clojure. The main problem is that the state of the persistent JVM gets dirty
 over time, producing strange errors and requiring liberal use of `cake kill`
 whenever any error is encountered, *just in case* dirty state is the cause.
 
-Instead of going down this perilous road again, Drip uses a different
-strategy. It keeps a fresh JVM spun up in reserve with the correct classpath and
-other JVM options so you can quickly connect and use it when needed.
+Instead of going down this road, Drip uses a different strategy. It keeps a
+fresh JVM spun up in reserve with the correct classpath and other JVM options
+so you can quickly connect and use it when needed. Drip hashes the JVM options
+and storing information about how to connect to that JVM in a directory with
+the hash value as its name.
 
 # Installation
 
