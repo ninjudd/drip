@@ -97,20 +97,26 @@ function launch_jvm {
 
     if mkdir "$jvm_dir"; then
         mkfifo "$jvm_dir/control"
+        mkfifo "$jvm_dir/status"
         mkfifo "$jvm_dir/err"
         mkfifo "$jvm_dir/out"
         mkfifo "$jvm_dir/in"
 
-        java "${jvm_args[@]}" "-Xbootclasspath/a:$DRIP_JAR" \
-             org.flatland.drip.Main "$main_class" "$jvm_dir" > /dev/null &
-        echo $! > "$jvm_dir/jvm.pid"
+        { # Need to write the exit status to a file.
+            java "${jvm_args[@]}" "-Xbootclasspath/a:$DRIP_JAR" \
+                org.flatland.drip.Main "$main_class" "$jvm_dir" &
+            echo $! > "$jvm_dir/pid"
+            wait %%
+            status=$?
+            [[ -e $jvm_dir/status ]] && echo $status > "$jvm_dir/status"
+        } > /dev/null &
         disown %%
     fi
 }
 
 function lock_dir {
     if mkdir "$jvm_dir/lock" 2> /dev/null; then
-        if kill -0 $(cat "$jvm_dir/jvm.pid") 2> /dev/null; then
+        if kill -0 $(cat "$jvm_dir/pid") 2> /dev/null; then
             echo $$ > "$jvm_dir/client.pid"
             active_jvm_dir=$jvm_dir
         fi
@@ -148,7 +154,7 @@ function kill_jvms {
 
     for jvm_dir in $DRIP_HOME/*/*/*-*; do
         if lock_dir; then
-            kill "$1" "$(cat $jvm_dir/jvm.pid)" 2> /dev/null
+            kill "$1" "$(cat $jvm_dir/pid)" 2> /dev/null
             rm -rf "$jvm_dir"
             killed=true
         fi
@@ -198,11 +204,7 @@ function send_args {
 }
 
 function wait_for_exit {
-    exec 4< "$active_jvm_dir/control"
-    while read -r exit_code; do
-        echo $exit_code
-    done <&4
-    exec 4<&-
+    status=$(cat "$active_jvm_dir/status")
     rm -rf "$active_jvm_dir"
 }
 
@@ -225,6 +227,7 @@ function run_main {(
 
     wait $out_pid $err_pid
     kill $in_pid
+    exit $status
 )}
 
 function run_drip_command {
@@ -260,6 +263,8 @@ parse_args "$@"
 if [[ -z $drip_command ]]; then
     find_jvm
     run_main
+    status=$?
+    exit $status
 else
     run_drip_command
 fi

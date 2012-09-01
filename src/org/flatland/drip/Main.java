@@ -90,9 +90,6 @@ public class Main {
     setProperties(runtimeArgs);
 
     invoke(main, split(mainArgs, "\u0000"));
-
-    FileOutputStream toBash = new FileOutputStream(new File(fifoDir, "control"));
-    toBash.close();
   }
 
   public static void main(String[] args) throws Exception {
