@@ -77,10 +77,11 @@ public class Main {
     startIdleKiller();
 
     Scanner fromBash = new Scanner(new File(fifoDir, "to_jvm"));
+    FileOutputStream toBash = new FileOutputStream(new File(fifoDir, "from_jvm"));
+
     String mainArgs    = readString(fromBash);
     String runtimeArgs = readString(fromBash);
     String environment = readString(fromBash);
-    fromBash.close();
 
     for (Switchable o : lazyStreams) {
       o.flip();
@@ -90,6 +91,9 @@ public class Main {
     setProperties(runtimeArgs);
 
     invoke(main, split(mainArgs, "\u0000"));
+
+    fromBash.close();
+    toBash.close();
   }
 
   public static void main(String[] args) throws Exception {
@@ -169,14 +173,14 @@ public class Main {
   }
 
   private void reopenStreams() throws FileNotFoundException, IOException {
-    SwitchableInputStream stdin = new SwitchableInputStream(System.in, new File(fifoDir, "in"));
     SwitchableOutputStream stderr = new SwitchableOutputStream(System.err, new File(fifoDir, "err"));
     SwitchableOutputStream stdout = new SwitchableOutputStream(System.out, new File(fifoDir, "out"));
-    lazyStreams = Arrays.<Switchable>asList(stdin, stderr, stdout);
+    SwitchableInputStream stdin = new SwitchableInputStream(System.in, new File(fifoDir, "in"));
+    lazyStreams = Arrays.<Switchable>asList(stderr, stdout, stdin);
 
-    System.setIn(new BufferedInputStream(stdin));
     System.setErr(new PrintStream(stderr));
     System.setOut(new PrintStream(stdout));
+    System.setIn(new BufferedInputStream(stdin));
   }
 
   private static final Pattern EVERYTHING = Pattern.compile(".+", Pattern.DOTALL);

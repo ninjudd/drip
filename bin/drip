@@ -97,6 +97,7 @@ function launch_jvm {
 
     if mkdir "$jvm_dir"; then
         mkfifo "$jvm_dir/to_jvm"
+        mkfifo "$jvm_dir/from_jvm"
         mkfifo "$jvm_dir/err"
         mkfifo "$jvm_dir/out"
         mkfifo "$jvm_dir/in"
@@ -191,10 +192,19 @@ function send_env {
 
 function send_args {
     exec 4> "$active_jvm_dir/to_jvm"
+    exec 5< "$active_jvm_dir/from_jvm"
     send_array "${main_args[@]}" >&4
     send_array "${runtime_args[@]}" >&4
     send_env >&4
     exec 4>&-
+}
+
+function wait_for_exit {
+    while read -r exit_code; do
+        echo $exit_code
+    done <&5
+    exec 5<&-
+    rm -rf "$active_jvm_dir"
 }
 
 function duplex_stdin {
@@ -204,22 +214,19 @@ function duplex_stdin {
     exec 3>&-
 }
 
-function duplex_streams {(
+function run_main {(
     # run in subshell to avoid Terminated message
-    duplex_stdin <&0 &
-    stdin_pid=$!
-    cat "$active_jvm_dir/err" >&2 &
-    cat "$active_jvm_dir/out"
-    kill $stdin_pid
-)}
-
-function run_main {
     send_args
-    duplex_streams
-    wait
 
-    rm -rf "$active_jvm_dir"
-}
+    cat "$active_jvm_dir/err" >&2 & err_pid=$!
+    cat "$active_jvm_dir/out"     & out_pid=$!
+    duplex_stdin <&0              & in_pid=$!
+
+    wait_for_exit
+
+    wait $out_pid $err_pid
+    kill $in_pid
+)}
 
 function run_drip_command {
     case $drip_command in
