@@ -2,13 +2,13 @@ package org.flatland.drip;
 import java.io.*;
 
 // not safe to use flip() while any other threads are accessing this object in any way
-public class SwitchableFileInputStream extends InputStream implements Switchable {
+public class SwitchableInputStream extends InputStream implements Switchable {
   private final File pathToNewIn;
 
   private InputStream in;
   private boolean switched;
 
-  public SwitchableFileInputStream(InputStream oldIn, File path) {
+  public SwitchableInputStream(InputStream oldIn, File path) {
     this.in = oldIn;
     this.pathToNewIn = path;
     this.switched = false;

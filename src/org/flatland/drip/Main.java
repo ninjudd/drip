@@ -168,9 +168,9 @@ public class Main {
   }
 
   private void reopenStreams() throws FileNotFoundException, IOException {
-    SwitchableFileInputStream stdin = new SwitchableFileInputStream(System.in, new File(fifoDir, "in"));
-    SwitchableFileOutputStream stdout = new SwitchableFileOutputStream(System.out, new File(fifoDir, "out"));
-    SwitchableFileOutputStream stderr = new SwitchableFileOutputStream(System.err, new File(fifoDir, "err"));
+    SwitchableInputStream stdin = new SwitchableInputStream(System.in, new File(fifoDir, "in"));
+    SwitchableOutputStream stdout = new SwitchableOutputStream(System.out, new File(fifoDir, "out"));
+    SwitchableOutputStream stderr = new SwitchableOutputStream(System.err, new File(fifoDir, "err"));
     lazyStreams = Arrays.<Switchable>asList(stdin, stdout, stderr);
 
     System.setIn(new BufferedInputStream(stdin));
