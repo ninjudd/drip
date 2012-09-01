@@ -234,17 +234,13 @@ function run_drip_command {
     case $drip_command in
         version)
             echo "drip version \"$DRIP_VERSION\"" >&2
-            java -version
-            ;;
+            java -version;;
         kill)
-            kill_jvms "$2"
-            ;;
+            kill_jvms "$2";;
         ps)
-            jps -vlm | grep org.flatland.drip.Main
-            ;;
+            jps -vlm | grep org.flatland.drip.Main;;
         -*)
-            java $drip_command
-            ;;
+            java $drip_command;;
     esac
 }
 
