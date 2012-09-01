@@ -14,11 +14,11 @@ import java.util.regex.Pattern;
 public class Main {
   private List<Switchable> lazyStreams;
   private String mainClass;
-  private File fifoDir;
+  private File dir;
 
-  public Main(String mainClass, String fifoDir) {
+  public Main(String mainClass, String dir) {
     this.mainClass = mainClass.replace('/', '.');
-    this.fifoDir  = new File(fifoDir);
+    this.dir = new File(dir);
   }
 
   private void killAfterTimeout() {
@@ -37,7 +37,7 @@ public class Main {
       return; // I guess someone wanted to kill the timeout thread?
     }
 
-    File lockDir = new File(fifoDir, "lock");
+    File lockDir = new File(dir, "lock");
     if (lockDir.mkdir()) {
       System.exit(0);
     } else {
@@ -76,7 +76,7 @@ public class Main {
 
     startIdleKiller();
 
-    Scanner fromBash = new Scanner(new File(fifoDir, "control"));
+    Scanner fromBash = new Scanner(new File(dir, "control"));
     String mainArgs    = readString(fromBash);
     String runtimeArgs = readString(fromBash);
     String environment = readString(fromBash);
@@ -172,9 +172,9 @@ public class Main {
   }
 
   private void reopenStreams() throws FileNotFoundException, IOException {
-    SwitchableOutputStream stderr = new SwitchableOutputStream(System.err, new File(fifoDir, "err"));
-    SwitchableOutputStream stdout = new SwitchableOutputStream(System.out, new File(fifoDir, "out"));
-    SwitchableInputStream stdin = new SwitchableInputStream(System.in, new File(fifoDir, "in"));
+    SwitchableOutputStream stderr = new SwitchableOutputStream(System.err, new File(dir, "err"));
+    SwitchableOutputStream stdout = new SwitchableOutputStream(System.out, new File(dir, "out"));
+    SwitchableInputStream stdin = new SwitchableInputStream(System.in, new File(dir, "in"));
     lazyStreams = Arrays.<Switchable>asList(stderr, stdout, stdin);
 
     System.setErr(new PrintStream(stderr));
