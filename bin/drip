@@ -96,9 +96,10 @@ function launch_jvm {
     jvm_dir=$sha_path/$$-$n
 
     if mkdir "$jvm_dir"; then
-        mkfifo "$jvm_dir/in"
-        mkfifo "$jvm_dir/out"
+        mkfifo "$jvm_dir/to_jvm"
         mkfifo "$jvm_dir/err"
+        mkfifo "$jvm_dir/out"
+        mkfifo "$jvm_dir/in"
 
         java "${jvm_args[@]}" "-Xbootclasspath/a:$DRIP_JAR" \
              org.flatland.drip.Main "$main_class" "$jvm_dir" > /dev/null &
@@ -189,28 +190,31 @@ function send_env {
 }
 
 function send_args {
-    send_array "${main_args[@]}"
-    send_array "${runtime_args[@]}"
-    send_env
+    exec 4> "$active_jvm_dir/to_jvm"
+    send_array "${main_args[@]}" >&4
+    send_array "${runtime_args[@]}" >&4
+    send_env >&4
+    exec 4>&-
 }
 
 function duplex_stdin {
     # This has to be in a separate function so we can close the fifo when we get Ctrl-D.
     exec 3> "$active_jvm_dir/in"
-    send_args >&3
     cat >&3 2> /dev/null
     exec 3>&-
 }
 
 function duplex_streams {(
     # run in subshell to avoid Terminated message
-    cat "$active_jvm_dir/err" >&2 &
     duplex_stdin <&0 &
+    stdin_pid=$!
+    cat "$active_jvm_dir/err" >&2 &
     cat "$active_jvm_dir/out"
-    kill %%
+    kill $stdin_pid
 )}
 
 function run_main {
+    send_args
     duplex_streams
     wait
 

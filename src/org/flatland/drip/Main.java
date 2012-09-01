@@ -12,7 +12,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Main {
-  private Scanner s;
   private List<Switchable> lazyStreams;
   private String mainClass;
   private File fifoDir;
@@ -77,13 +76,15 @@ public class Main {
 
     startIdleKiller();
 
+    Scanner fromBash = new Scanner(new File(fifoDir, "to_jvm"));
+    String mainArgs    = readString(fromBash);
+    String runtimeArgs = readString(fromBash);
+    String environment = readString(fromBash);
+    fromBash.close();
+
     for (Switchable o : lazyStreams) {
       o.flip();
     }
-
-    String mainArgs    = readLine();
-    String runtimeArgs = readLine();
-    String environment = readLine();
 
     mergeEnv(parseEnv(environment));
     setProperties(runtimeArgs);
@@ -169,18 +170,17 @@ public class Main {
 
   private void reopenStreams() throws FileNotFoundException, IOException {
     SwitchableInputStream stdin = new SwitchableInputStream(System.in, new File(fifoDir, "in"));
-    SwitchableOutputStream stdout = new SwitchableOutputStream(System.out, new File(fifoDir, "out"));
     SwitchableOutputStream stderr = new SwitchableOutputStream(System.err, new File(fifoDir, "err"));
-    lazyStreams = Arrays.<Switchable>asList(stdin, stdout, stderr);
+    SwitchableOutputStream stdout = new SwitchableOutputStream(System.out, new File(fifoDir, "out"));
+    lazyStreams = Arrays.<Switchable>asList(stdin, stderr, stdout);
 
     System.setIn(new BufferedInputStream(stdin));
-    System.setOut(new PrintStream(stdout));
     System.setErr(new PrintStream(stderr));
-    s = new Scanner(System.in);
+    System.setOut(new PrintStream(stdout));
   }
 
   private static final Pattern EVERYTHING = Pattern.compile(".+", Pattern.DOTALL);
-  private String readLine() throws IOException {
+  private String readString(Scanner s) throws IOException {
     s.useDelimiter(":");
     int numChars = s.nextInt();
     s.skip(":");
