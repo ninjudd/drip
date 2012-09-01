@@ -96,8 +96,7 @@ function launch_jvm {
     jvm_dir=$sha_path/$$-$n
 
     if mkdir "$jvm_dir"; then
-        mkfifo "$jvm_dir/to_jvm"
-        mkfifo "$jvm_dir/from_jvm"
+        mkfifo "$jvm_dir/control"
         mkfifo "$jvm_dir/err"
         mkfifo "$jvm_dir/out"
         mkfifo "$jvm_dir/in"
@@ -191,8 +190,7 @@ function send_env {
 }
 
 function send_args {
-    exec 4> "$active_jvm_dir/to_jvm"
-    exec 5< "$active_jvm_dir/from_jvm"
+    exec 4> "$active_jvm_dir/control"
     send_array "${main_args[@]}" >&4
     send_array "${runtime_args[@]}" >&4
     send_env >&4
@@ -200,10 +198,11 @@ function send_args {
 }
 
 function wait_for_exit {
+    exec 4< "$active_jvm_dir/control"
     while read -r exit_code; do
         echo $exit_code
-    done <&5
-    exec 5<&-
+    done <&4
+    exec 4<&-
     rm -rf "$active_jvm_dir"
 }
 

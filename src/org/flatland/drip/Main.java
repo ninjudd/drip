@@ -76,12 +76,11 @@ public class Main {
 
     startIdleKiller();
 
-    Scanner fromBash = new Scanner(new File(fifoDir, "to_jvm"));
-    FileOutputStream toBash = new FileOutputStream(new File(fifoDir, "from_jvm"));
-
+    Scanner fromBash = new Scanner(new File(fifoDir, "control"));
     String mainArgs    = readString(fromBash);
     String runtimeArgs = readString(fromBash);
     String environment = readString(fromBash);
+    fromBash.close();
 
     for (Switchable o : lazyStreams) {
       o.flip();
@@ -92,7 +91,7 @@ public class Main {
 
     invoke(main, split(mainArgs, "\u0000"));
 
-    fromBash.close();
+    FileOutputStream toBash = new FileOutputStream(new File(fifoDir, "control"));
     toBash.close();
   }
 
