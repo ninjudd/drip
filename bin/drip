@@ -3,18 +3,18 @@
 function http_get { # Adapted from http://github.com/technomancy/leiningen
     if [[ -z $http_get ]]; then
         if type -p curl >/dev/null 2>&1; then
-            http_get=curl -f -L -o
+            http_get='curl -f -L -o'
         else
-            http_get=wget -O
+            http_get='wget -O'
         fi
     fi
     mkdir -p "$(dirname $1)"
-    $http_get "$1.pending" "$2"
+    $http_get "$1.pending" "$2" || return 1
     mv -- "$1.pending" "$1"
 }
 
 function find_drip_jar {
-    local script="$0"
+    script="$0"
 
     # Adapted from http://github.com/technomancy/leiningen
     # resolve symlinks to the script itself portably
@@ -32,13 +32,13 @@ function find_drip_jar {
         local bin_dir=$(dirname $script)
         if [[ -r $bin_dir/../src/org/flatland/drip/Main.java ]]; then
             # Checkout
-            local drip_dir=$bin_dir/..
+            drip_dir=$bin_dir/..
             DRIP_JAR=$drip_dir/drip.jar
             (cd -- "$drip_dir" && make -s jar)
         else
             # Standalone
             DRIP_JAR=~/.m2/repository/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar
-            [[ -e $DRIP_JAR ]] || http_get "$DRIP_JAR" "$DRIP_URL"
+            [[ -e $DRIP_JAR ]] || http_get "$DRIP_JAR" "$DRIP_JAR_URL"
         fi
     fi
 }
@@ -54,8 +54,11 @@ function parse_args {
     if [[ $# -eq 0 ]]; then
         echo "Usage: drip [same args as java...]"
         exit 0
-    elif [[ $# -eq 1 && $1 != *.* || $# -eq 2 && $1 == 'kill' && $2 == -* ]]; then
+    elif ! expr "$1" : '.*[.-]' > /dev/null; then
         drip_command=$1
+        return
+    elif [[ $# -eq 1 && $1 == -* ]]; then
+        java_command=$1
         return
     fi
 
@@ -239,8 +242,21 @@ function run_drip_command {
             kill_jvms "$2";;
         ps)
             jps -vlm | grep org.flatland.drip.Main;;
-        -*)
-            java $drip_command;;
+        upgrade)
+            if [[ -z $drip_dir ]]; then
+                http_get "$script" "$DRIP_BIN_URL" || exit 1
+                chmod +x "$script"
+            elif [[ -d $drip_dir/.git ]]; then
+                (cd "$drip_dir" && git pull)
+                exit $?
+            else
+                echo Please use your package manager to upgrade Drip.
+                echo For example:
+                echo   brew update && brew upgrade drip
+            fi;;
+        *)
+            echo Unknown command: $drip_command
+            exit 1;;
     esac
 }
 
@@ -250,13 +266,15 @@ DRIP_POOL=1
 DRIP_HOME=${DRIP_HOME:-~/.drip} # what if this starts with a dash?
 DRIP_VERSION=${DRIP_VERSION:-0.0.4}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
-DRIP_URL=${DRIP_URL:-$DRIP_REPO/org/flatland/drip/${DRIP_VERSION}/drip-${DRIP_VERSION}.jar}
+DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/${DRIP_VERSION}/drip-${DRIP_VERSION}.jar}
+DRIP_BIN_URL=${DRIP_BIN_URL:-http://drip.flatland.org}
 
 find_drip_jar
 
 parse_args "$@"
 
 if [[ -z $drip_command ]]; then
+    [[ -z $java_command ]] || exec java $java_command
     find_jvm
     run_main
     status=$?
