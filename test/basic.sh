@@ -21,11 +21,11 @@ function test_exit_status {
     assert_equal 1 $?
 }
 
-function test_speed_increase {
-    drip kill > /dev/null
+function test_runtime_environment {
+    export foo=bar
+    assert_equal '"bar"' "$(drip -cp clojure.jar clojure.main -e '(System/getenv "foo")')"
+    assert_equal '"bar"' "$(drip -cp clojure.jar clojure.main -e '(System/getenv "foo")')"
 
-    one="$(bench drip -cp clojure.jar clojure.main -e '(* 1 2)')"
-    two="$(bench drip -cp clojure.jar clojure.main -e '(* 1 2)')"
-
-    assert [[ $(($one / 5)) -gt $two ]]
+    export foo=baz
+    assert_equal '"baz"' "$(drip -cp clojure.jar clojure.main -e '(System/getenv "foo")')"
 }

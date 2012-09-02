@@ -1,5 +1,9 @@
 PATH=../bin:$PATH
 
+function setup {
+    drip kill > /dev/null
+}
+
 function bench {
     # Can't believe it is this hard to get the timing in milliseconds.
     local t
