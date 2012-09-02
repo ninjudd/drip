@@ -25,7 +25,17 @@ function test_scala_speed_increase {
     assert [[ $? == 0 ]]
 
     # Only slightly faster.
-    assert [[ $(($one * 4)) -gt $(($two * 5)) ]]
+    assert [[ $one -gt $two ]]
+}
+
+function test_java_speed_increase {
+    one=$(bench drip test.Main foo bar baz)
+    assert [[ $? == 0 ]]
+    two=$(bench drip test.Main foo bar baz)
+    assert [[ $? == 0 ]]
+
+    # Only slightly faster.
+    assert [[ $one -gt $two ]]
 }
 
 function test_runtime_properties {

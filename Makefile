@@ -25,8 +25,11 @@ install: jar
 release: jar
 	scp ${JAR} pom.xml clojars@clojars.org:
 
-test: jar test/clojure.jar test/jruby.jar test/scala
+test: jar test/clojure.jar test/jruby.jar test/scala test/test/Main.class
 	test/run
+
+test/test/Main.class: test/test/Main.java
+	javac $<
 
 CLOJURE_URL=http://repo1.maven.org/maven2/org/clojure/clojure/1.4.0/clojure-1.4.0.jar
 JRUBY_URL=http://jruby.org.s3.amazonaws.com/downloads/1.6.7.2/jruby-complete-1.6.7.2.jar
