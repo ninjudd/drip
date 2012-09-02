@@ -61,3 +61,23 @@ requests with the same classpath will have a 30-minute timeout to deactivation.
 
 For more information about how to integrate Drip with your favorite JVM
 language, check out the [wiki](https://github.com/flatland/drip/wiki).
+
+# Advanced settings 
+
+Drip supports the following advanced settings.
+
+## Pre-Initialization
+
+By default, Drip only loads your main class at startup, but
+you can tell Drip to run additional code at startup. This can be used to load classes or execute any initialization code you like. For a language like Clojure, which compiles code on-the-fly, this can be used to precompile commonly used code by requiring it.
+
+To tell Drip how to initialize a new JVM, use the `DRIP_INIT`
+and `DRIP_INIT_CLASS` environment variables. `DRIP_INIT` should be a newline-separated list of args to be passed to the `main()` function of `DRIP_INIT_CLASS`. `DRIP_INIT_CLASS` defaults to the main class the JVM was started with. 
+
+## Runtime Properties
+
+Sometimes, you need to set Java system properties, but you don't want them to be included in the JVM options used for hashing. In this case, use two dashes instead of one, and the options won't be passed to the JVM at startup, instead they will be passed at runtime. Keep in mind that any system properties passed this way will not be set during initialization.
+
+## Runtime Environment Variables
+
+Drip passes all environment variables exported at runtime to the JVM and merges them into the map returned by `System.getenv`. Keep in mind that the environment isn't modified until we connect to the JVM; during initialization, the environment will be derived from the previous process that launched the spare JVM. 
