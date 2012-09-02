@@ -61,18 +61,11 @@ public class Main {
 
     Method main = mainMethod(mainClass);
 
-    String initClass = System.getenv("DRIP_INIT_CLASS");
-    String initArgs  = System.getenv("DRIP_INIT");
-    Method init;
-
-    if (initClass == null) {
-      init = main;
-      initClass = mainClass;
-    } else {
-      init = mainMethod(initClass);
+    Method init = mainMethod(System.getenv("DRIP_INIT_CLASS"));
+    String initArgs = System.getenv("DRIP_INIT");
+    if (initArgs != null) {
+      invoke(init == null ? main : init, split(initArgs, "\n"));
     }
-    if (initArgs == null) initArgs = defaultInitArgs(initClass);
-    if (initArgs != null) invoke(init, split(initArgs, "\n"));
 
     startIdleKiller();
 
@@ -101,14 +94,6 @@ public class Main {
     if (className != null) {
       return Class.forName(className, true, ClassLoader.getSystemClassLoader())
         .getMethod("main", String[].class);
-    } else {
-      return null;
-    }
-  }
-
-  private String defaultInitArgs(String className) {
-    if (className.equals("org.jruby.Main") || className.equals("clojure.main")) {
-      return "-e\nnil";
     } else {
       return null;
     }

@@ -94,6 +94,15 @@ function make_sha_path {
     echo -n "$opts" > $sha_path/opts
 }
 
+function default_init_args {
+    local f='%s\n%s'
+    case ${DRIP_INIT_CLASS:-$main_class} in
+        clojure.main)                      printf $f '-e' 'nil';;
+        org.jruby.Main)                    printf $f '-e' 'nil';;
+        scala.tools.nsc.MainGenericRunner) printf $f '-e' 'null';;
+    esac
+}
+
 function launch_jvm {
     jvm_dir=$sha_path/$$-$n
 
@@ -103,6 +112,8 @@ function launch_jvm {
         mkfifo "$jvm_dir/err"
         mkfifo "$jvm_dir/out"
         mkfifo "$jvm_dir/in"
+
+        export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 
         { # Need to write the exit status to a file.
             java "${jvm_args[@]}" "-Xbootclasspath/a:$DRIP_JAR" \

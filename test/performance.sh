@@ -1,7 +1,16 @@
-function test_speed_increase {
-    one=$(bench drip -cp clojure.jar clojure.main -e '(* 1 2)')
+function test_clojure_speed_increase {
+    one=$(bench drip -cp clojure.jar clojure.main -e '(* 1 2 3)')
     assert [[ $? == 0 ]]
-    two=$(bench drip -cp clojure.jar clojure.main -e '(* 1 2)')
+    two=$(bench drip -cp clojure.jar clojure.main -e '(* 4 5 6)')
+    assert [[ $? == 0 ]]
+
+    assert [[ $(($one / 5)) -gt $two ]]
+}
+
+function test_jruby_speed_increase {
+    one=$(bench drip -cp jruby.jar org.jruby.Main -e 'puts 1 * 2 * 3')
+    assert [[ $? == 0 ]]
+    two=$(bench drip -cp jruby.jar org.jruby.Main -e 'puts 4 * 5 * 6')
     assert [[ $? == 0 ]]
 
     assert [[ $(($one / 5)) -gt $two ]]
