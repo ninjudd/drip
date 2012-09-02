@@ -228,7 +228,7 @@ function run_main {(
     wait_for_exit
 
     wait $out_pid $err_pid
-    kill $in_pid
+    kill $in_pid 2> /dev/null
     exit $status
 )}
 
