@@ -70,9 +70,13 @@ function test_results {
     fi
 }
 
+function init_fixtures {
+    eval "function setup    { :; }"
+    eval "function teardown { :; }"
+}
+
 function run_all_tests {
     cd $(dirname $0)
-    source ./helpers/init.sh
 
     local files=()
     while read -r -d '' file; do
@@ -92,11 +96,15 @@ function run_all_tests {
 
         echo
         printf "%s %s\n" "$0" "$(basename $file .sh)"
+        init_fixtures
+        source ./helpers/init.sh
         source "$file"
 
         for test in "${tests[@]}"; do
             ((test_count++))
+            setup
             $test
+            teardown
         done
     done
 
