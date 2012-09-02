@@ -21,7 +21,7 @@ function assert {
         passed
     else
         failed
-        echo " assertion failed"
+        echo " assert failed"
         echo " non-zero exit: $@"
     fi
 }
@@ -31,6 +31,7 @@ function assert_equal {
        passed
    else
        failed
+       echo " assert_equal failed"
        echo " expected: $1"
        echo "   actual: $2"
    fi
@@ -41,7 +42,7 @@ function assert_match {
         passed
     else
         failed
-        echo " match failed"
+        echo " assert_match failed"
         echo " expected =~ $1"
         echo "   actual    $2"
     fi
