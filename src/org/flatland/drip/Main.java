@@ -10,11 +10,17 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.sun.jna.Library;
+import com.sun.jna.Native;
+import com.sun.jna.LastErrorException;
 
 public class Main {
   private List<Switchable> lazyStreams;
   private String mainClass;
   private File dir;
+  private SwitchableOutputStream err;
+  private SwitchableOutputStream out;
+  private SwitchableInputStream  in;
 
   public Main(String mainClass, String dir) {
     this.mainClass = mainClass.replace('/', '.');
@@ -33,7 +39,7 @@ public class Main {
     try {
       Thread.sleep(idleTime * 60 * 1000); // convert minutes to ms
     } catch (InterruptedException e) {
-      System.err.println("drip: Interrutped??");
+      System.err.println("drip: Interrupted??");
       return; // I guess someone wanted to kill the timeout thread?
     }
 
@@ -75,12 +81,14 @@ public class Main {
     String environment = readString(fromBash);
     fromBash.close();
 
-    for (Switchable o : lazyStreams) {
-      o.flip();
-    }
-
     mergeEnv(parseEnv(environment));
     setProperties(runtimeArgs);
+
+    flip(in);
+    flip(out);
+    flip(err);
+
+    setControllingTerminal();
 
     invoke(main, split(mainArgs, "\u0000"));
   }
@@ -115,9 +123,7 @@ public class Main {
   }
 
   private void invoke(Method main, String[] args) throws Exception {
-    if (args != null) {
-      main.invoke(null, (Object)args);
-    }
+    main.invoke(null, (Object)args);
   }
 
   private void setProperties(String runtimeArgs) {
@@ -153,15 +159,37 @@ public class Main {
     field.setAccessible(false);
   }
 
-  private void reopenStreams() throws FileNotFoundException, IOException {
-    SwitchableOutputStream stderr = new SwitchableOutputStream(System.err, new File(dir, "err"));
-    SwitchableOutputStream stdout = new SwitchableOutputStream(System.out, new File(dir, "out"));
-    SwitchableInputStream stdin = new SwitchableInputStream(System.in, new File(dir, "in"));
-    lazyStreams = Arrays.<Switchable>asList(stderr, stdout, stdin);
+  private void flip(Switchable s) throws IllegalStateException, IOException {
+    while (! s.path().exists()) {
+      try {
+        Thread.sleep(50);
+      } catch (InterruptedException e) {
+      }
+    }
+    s.flip();
+  }
 
-    System.setErr(new PrintStream(stderr));
-    System.setOut(new PrintStream(stdout));
-    System.setIn(new BufferedInputStream(stdin));
+  private void setControllingTerminal() throws Exception {
+    FileDescriptor fdesc = in.getFD();
+
+    Field field = fdesc.getClass().getDeclaredField("fd");
+    field.setAccessible(true);
+    Integer fd = (Integer) field.get(fdesc);
+    field.setAccessible(false);
+
+    LibC libc = (LibC) Native.loadLibrary("c", LibC.class);
+    libc.setsid();
+    libc.ioctl(fd, TIOCSCTTY, 0);
+  }
+
+  private void reopenStreams() throws FileNotFoundException, IOException {
+    this.in  = new SwitchableInputStream(System.in, new File(dir, "in"));
+    this.out = new SwitchableOutputStream(System.out, new File(dir, "out"));
+    this.err = new SwitchableOutputStream(System.err, new File(dir, "err"));
+
+    System.setIn(new BufferedInputStream(in));
+    System.setOut(new PrintStream(out));
+    System.setErr(new PrintStream(err));
   }
 
   private static final Pattern EVERYTHING = Pattern.compile(".+", Pattern.DOTALL);
@@ -185,5 +213,17 @@ public class Main {
       throw new IOException("Instead of comma terminator after \"" + arg + "\", found " + terminator);
     }
     return arg;
+  }
+
+  private static final int TIOCSCTTY=536900705;
+  private static final int TIOCNOTTY=536900721;
+
+  public interface LibC extends Library {
+    int ioctl(int fildes, long request, Object... args) throws LastErrorException;
+    int setsid() throws LastErrorException;
+    int getpgrp();
+    int getpid();
+    int getsid(int pid);
+    void exit(int status);
   }
 }

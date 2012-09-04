@@ -29,7 +29,7 @@ function find_drip_jar {
     done
 
     if [[ -z $DRIP_JAR ]]; then
-        local bin_dir=$(dirname $script)
+        bin_dir=$(dirname $script)
         if [[ -r $bin_dir/../src/org/flatland/drip/Main.java ]]; then
             # Checkout
             drip_dir=$bin_dir/..
@@ -109,14 +109,11 @@ function launch_jvm {
     if mkdir "$jvm_dir"; then
         mkfifo "$jvm_dir/control"
         mkfifo "$jvm_dir/status"
-        mkfifo "$jvm_dir/err"
-        mkfifo "$jvm_dir/out"
-        mkfifo "$jvm_dir/in"
 
         export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 
         { # Need to write the exit status to a file.
-            java "${jvm_args[@]}" "-Xbootclasspath/a:$DRIP_JAR" \
+            java "${jvm_args[@]}" -Djava.awt.headless=true "-Xbootclasspath/a:$DRIP_JAR:jna.jar" \
                 org.flatland.drip.Main "$main_class" "$jvm_dir" &
             echo $! > "$jvm_dir/pid"
             wait %%
@@ -221,27 +218,14 @@ function wait_for_exit {
     rm -rf "$active_jvm_dir"
 }
 
-function duplex_stdin {
-    # This has to be in a separate function so we can close the fifo when we get Ctrl-D.
-    exec 3> "$active_jvm_dir/in"
-    cat >&3 2> /dev/null
-    exec 3>&-
-}
-
-function run_main {(
-    # run in subshell to avoid Terminated message
+function run_main {
     send_args
-
-    cat "$active_jvm_dir/err" >&2 & err_pid=$!
-    cat "$active_jvm_dir/out"     & out_pid=$!
-    duplex_stdin <&0              & in_pid=$!
+    $bin_dir/proxy "$active_jvm_dir"/{in,out,err}
 
     wait_for_exit
 
-    wait $out_pid $err_pid
-    kill $in_pid 2> /dev/null
     exit $status
-)}
+}
 
 function run_drip_command {
     case $drip_command in
