@@ -46,7 +46,7 @@ void proxy(int in, int out, int err) {
 
     if (select(nfds, &set, NULL, NULL, NULL) < 0) {
       if (errno == EINTR) continue;
-      fprintf(stderr, "Error %d on select", errno);
+      fprintf(stderr, "Error %d on select\n", errno);
       return;
     }
 
