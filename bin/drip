@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
 
 function http_get { # Adapted from http://github.com/technomancy/leiningen
+    local url="$1" path="$2"
+
     if [[ -z $http_get ]]; then
         if type -p curl >/dev/null 2>&1; then
-            http_get='curl -f -L -o'
+            http_get='curl -fL# -o'
         else
             http_get='wget -O'
         fi
     fi
-    mkdir -p "$(dirname $1)"
-    $http_get "$1.pending" "$2" || return 1
-    mv -- "$1.pending" "$1"
+    mkdir -p "$(dirname $path)"
+    echo "Downloading $url..." >&2
+    $http_get "$path.pending" "$url" || return 1
+    mv -- "$path.pending" "$path"
 }
 
-function find_drip_jar {
+function bootstrap {
     script="$0"
 
     # Adapted from http://github.com/technomancy/leiningen
@@ -28,8 +31,10 @@ function find_drip_jar {
         fi
     done
 
+    JNA_JAR=${JNA_JAR:-$(mvn_get 'jna' 'com/sun' "$JNA_VERSION" "$JNA_JAR_URL")}
+
     if [[ -z $DRIP_JAR ]]; then
-        bin_dir=$(dirname $script)
+        local bin_dir=$(dirname $script)
         if [[ -r $bin_dir/../src/org/flatland/drip/Main.java ]]; then
             # Checkout
             drip_dir=$bin_dir/..
@@ -37,10 +42,28 @@ function find_drip_jar {
             (cd -- "$drip_dir" && make -s jar)
         else
             # Standalone
-            DRIP_JAR=~/.m2/repository/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar
-            [[ -e $DRIP_JAR ]] || http_get "$DRIP_JAR" "$DRIP_JAR_URL"
+            DRIP_JAR=$(mvn_get 'drip' 'org/flatland' "$DRIP_VERSION" "$DRIP_JAR_URL")
         fi
     fi
+
+    DRIP_PROXY=${DRIP_PROXY:-$DRIP_HOME/drip_proxy}
+    if [[ ! -e $DRIP_PROXY ]]; then
+        local proxy_src
+        if [[ -z $drip_dir ]]; then
+            proxy_src=$DRIP_HOME/drip_proxy.c
+            http_get "$DRIP_PROXY_URL" "$proxy_src"
+        else
+            proxy_src=$drip_dir/src/drip_proxy.c
+        fi
+        gcc $proxy_src -o $DRIP_PROXY
+    fi
+}
+
+function mvn_get {
+    local artifact="$1" group="$2" version="$3" url="$4"
+    local jar="$MVN_REPO/$group/$artifact/$version/$artifact-$version.jar"
+    [[ -e $jar ]] || http_get "$url" "$jar"
+    printf '%s' "$jar"
 }
 
 declare -a jvm_args
@@ -113,7 +136,7 @@ function launch_jvm {
         export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 
         { # Need to write the exit status to a file.
-            java "${jvm_args[@]}" -Djava.awt.headless=true "-Xbootclasspath/a:$DRIP_JAR:jna.jar" \
+            java "${jvm_args[@]}" -Djava.awt.headless=true "-Xbootclasspath/a:$DRIP_JAR:$JNA_JAR" \
                 org.flatland.drip.Main "$main_class" "$jvm_dir" &
             echo $! > "$jvm_dir/pid"
             wait %%
@@ -220,7 +243,7 @@ function wait_for_exit {
 
 function run_main {
     send_args
-    $bin_dir/proxy "$active_jvm_dir"/{in,out,err}
+    $DRIP_PROXY "$active_jvm_dir"/{in,out,err}
 
     wait_for_exit
 
@@ -238,7 +261,7 @@ function run_drip_command {
             jps -vlm | grep org.flatland.drip.Main;;
         upgrade)
             if [[ -z $drip_dir ]]; then
-                http_get "$script" "$DRIP_BIN_URL" || exit 1
+                http_get  "$DRIP_BIN_URL" "$script" || exit 1
                 chmod +x "$script"
             elif [[ -d $drip_dir/.git ]]; then
                 (cd "$drip_dir" && git pull)
@@ -260,10 +283,14 @@ DRIP_POOL=1
 DRIP_HOME=${DRIP_HOME:-~/.drip} # what if this starts with a dash?
 DRIP_VERSION=${DRIP_VERSION:-0.0.4}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
-DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/${DRIP_VERSION}/drip-${DRIP_VERSION}.jar}
-DRIP_BIN_URL=${DRIP_BIN_URL:-http://drip.flatland.org}
+DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar}
+DRIP_BIN_URL=${DRIP_BIN_URL:-https://raw.github.com/flatland/drip/master/bin/drip}
+DRIP_PROXY_URL=${DRIP_PROXY_URL:-https://raw.github.com/flatland/drip/master/src/drip_proxy.c}
+JNA_VERSION=${JNA_VERSION:-3.4.1}
+JNA_JAR_URL=${JNA_JAR_URL:-https://raw.github.com/twall/jna/$JNA_VERSION/dist/jna.jar}
+MVN_REPO=${MVN_REPO:-~/.m2/repository}
 
-find_drip_jar
+bootstrap
 
 parse_args "$@"
 

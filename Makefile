@@ -6,17 +6,14 @@ JAR=drip.jar
 all: jar compile
 
 %.class: %.java
-	javac -classpath jna.jar ${SOURCES}
+	javac -classpath ${HOME}/.m2/repository/com/sun/jna/3.4.1/jna-3.4.1.jar ${SOURCES}
 
 ${JAR}: ${CLASSES}
 	jar cf ${JAR} -C src/ org
 
 jar: ${JAR}
 
-bin/proxy: src/proxy.c
-	gcc $< -o $@
-
-compile: ${CLASSES} bin/proxy
+compile: ${CLASSES}
 
 clean:
 	rm ${CLASSES}
