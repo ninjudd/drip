@@ -46,15 +46,13 @@ function bootstrap {
         fi
     fi
 
-    if [[ ! -e $DRIP_PROXY ]]; then
-        local proxy_src
-        if [[ -z $drip_dir ]]; then
-            proxy_src=$DRIP_HOME/drip_proxy.c
-            http_get "$DRIP_PROXY_URL" "$proxy_src"
-        else
-            proxy_src=$drip_dir/src/drip_proxy.c
-        fi
-        gcc $proxy_src -o $DRIP_PROXY
+    if [[ -z $drip_dir ]]; then
+        [[ -e $DRIP_PROXY_SRC ]] || http_get "$DRIP_PROXY_URL" "$proxy_src"
+    else
+        DRIP_PROXY_SRC=$drip_dir/src/drip_proxy.c
+    fi
+    if [[ $DRIP_PROXY_SRC -nt $DRIP_PROXY ]]; then
+        gcc $DRIP_PROXY_SRC -o $DRIP_PROXY
     fi
 }
 
@@ -262,15 +260,14 @@ function run_drip_command {
             if [[ -z $drip_dir ]]; then
                 http_get  "$DRIP_BIN_URL" "$script" || exit $?
                 chmod +x "$script"
+                rm "$DRIP_PROXY_SRC" # need to refetch in case it has changed
             elif [[ -d $drip_dir/.git ]]; then
                 (cd "$drip_dir" && git pull)
             else
                 echo Please use your package manager to upgrade Drip.
                 echo For example:
                 echo   brew update && brew upgrade drip
-                exit 1
             fi
-            rm "$DRIP_PROXY" # need to refetch and recompile in case it has changed
             exit $?;;
         *)
             echo Unknown command: $drip_command
@@ -287,6 +284,7 @@ DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
 DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar}
 DRIP_BIN_URL=${DRIP_BIN_URL:-https://raw.github.com/flatland/drip/master/bin/drip}
 DRIP_PROXY_URL=${DRIP_PROXY_URL:-https://raw.github.com/flatland/drip/master/src/drip_proxy.c}
+DRIP_PROXY_SRC=${DRIP_PROXY_SRC:-$DRIP_HOME/drip_proxy.c}
 DRIP_PROXY=${DRIP_PROXY:-$DRIP_HOME/drip_proxy}
 JNA_VERSION=${JNA_VERSION:-3.4.1}
 JNA_JAR_URL=${JNA_JAR_URL:-https://raw.github.com/twall/jna/$JNA_VERSION/dist/jna.jar}
