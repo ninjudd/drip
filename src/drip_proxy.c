@@ -3,16 +3,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <setjmp.h>
+#include <sys/ioctl.h>
 #include <sys/select.h>
 #include <sys/types.h>
 #include <termios.h>
 
+jmp_buf env;
+char* err_prefix;
+
 // Based on code from https://github.com/nelhage/reptyr
 
-int check(char* name, int n) {
+int check(char* prefix, int n) {
   if (n < 0) {
-    fprintf(stderr, "Error %d on %s\n", errno, name);
-    exit(1);
+    err_prefix = prefix;
+    longjmp(env, errno);
   } else {
     return n;
   }
@@ -68,7 +73,7 @@ void proxy(int in, int out, int err) {
 }
 
 int open_pty() {
-  int fd = check("open", open("/dev/ptmx", O_RDWR));
+  int fd = check("posix_openpt", posix_openpt(O_RDWR | O_NOCTTY));
 
   check("grantpt",  grantpt(fd));
   check("unlockpt", unlockpt(fd));
@@ -82,45 +87,59 @@ int open_fifo(char* path, int oflag) {
 }
 
 int main(int argc, char **argv) {
-  struct termios prev;
+  if (argc != 4) {
+    fprintf(stderr, "Usage: drip_proxy in out err\n");
+    exit(1);
+  }
+
   char* tty_name = ttyname(0);  
+  struct termios prev;
+  int exit_code = 0;
 
   int in  = 0;
   int out = 0;
   int err = 0;
 
-  if (tty_name) {
-    check("tcgetcattr", tcgetattr(0, &prev));
+  if (setjmp(env) == 0) {
+    if (tty_name) {
+      check("tcgetcattr", tcgetattr(0, &prev));
+      struct termios raw = prev;
+      cfmakeraw(&raw);
+      check("tcsetattr raw", tcsetattr(0, TCSANOW, &raw));
+      
+      int pty = open_pty();
+      char* pty_name = ptsname(pty);
+      
+      in = pty;
+      check("symlink in", symlink(pty_name, argv[1]));
+      
+      char* out_name = ttyname(1);
+      if (out_name && strcmp(tty_name, out_name) == 0) {
+        out = pty;
+        check("symlink out", symlink(pty_name, argv[2]));
+      }
 
-    int pty = open_pty();
-    char* pty_name = ptsname(pty);
+      char* err_name = ttyname(2);
+      if (err_name && strcmp(tty_name, err_name) == 0) {
+        err = pty;
+        check("symlink err", symlink(pty_name, argv[3]));
+      }
+    }
     
-    in = pty;
-    check("symlink in", symlink(pty_name, argv[1]));
-
-    struct termios raw = prev;
-    cfmakeraw(&raw);
-    check("tcsetattr raw", tcsetattr(0, TCSANOW, &raw));
-
-    if (strcmp(tty_name, ttyname(1)) == 0) {
-      out = pty;
-      check("symlink out", symlink(pty_name, argv[2]));
-    }
-    if (strcmp(tty_name, ttyname(1)) == 0) {
-      err = pty;
-      check("symlink err", symlink(pty_name, argv[3]));
-    }
+    if (!in)  in  = open_fifo(argv[1], O_WRONLY);
+    if (!out) out = open_fifo(argv[2], O_RDONLY);
+    if (!err) err = open_fifo(argv[3], O_RDONLY);
+    
+    proxy(in, out, err);
+  } else {
+    exit_code = 1;
   }
-
-  if (!in)  in  = open_fifo(argv[2], O_WRONLY);
-  if (!out) out = open_fifo(argv[2], O_RDONLY);
-  if (!err) err = open_fifo(argv[3], O_RDONLY);
-
-  proxy(in, out, err);
 
   if (tty_name) {
     check("tcsetattr prev", tcsetattr(0, TCSANOW, &prev));
   }
 
-  return 0;
+  if (exit_code) perror(err_prefix);
+
+  return exit_code;
 }

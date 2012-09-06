@@ -3,3 +3,4 @@
 *.jar
 *.tgz
 test/scala
+repl-port

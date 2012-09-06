@@ -45,15 +45,26 @@ function bootstrap {
             DRIP_JAR=$(mvn_get 'drip' 'org/flatland' "$DRIP_VERSION" "$DRIP_JAR_URL")
         fi
     fi
+    drip_proxy=$(compile 'drip_proxy')
+    drip_daemon=$(compile 'drip_daemon')
+}
+
+function compile {
+    local base=$1
+    local src_file
+    local bin_file="$DRIP_HOME/$base"
 
     if [[ -z $drip_dir ]]; then
-        [[ -e $DRIP_PROXY_SRC ]] || http_get "$DRIP_PROXY_URL" "$proxy_src"
+        mkdir -p "$DRIP_SRC"
+        src_file=$DRIP_SRC/$base.c
+        [[ -e $src_file ]] || http_get "$DRIP_SRC_URL/$base.c" "$src_file"
     else
-        DRIP_PROXY_SRC=$drip_dir/src/drip_proxy.c
+        src_file=$drip_dir/src/$base.c
     fi
-    if [[ $DRIP_PROXY_SRC -nt $DRIP_PROXY ]]; then
-        gcc $DRIP_PROXY_SRC -o $DRIP_PROXY
+    if [[ $src_file -nt $bin_file ]]; then
+        gcc $src_file -o $bin_file
     fi
+    echo "$bin_file"
 }
 
 function mvn_get {
@@ -132,21 +143,15 @@ function launch_jvm {
 
         export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 
-        { # Need to write the exit status to a file.
-            java "${jvm_args[@]}" -Djava.awt.headless=true "-Xbootclasspath/a:$DRIP_JAR:$JNA_JAR" \
-                org.flatland.drip.Main "$main_class" "$jvm_dir" &
-            echo $! > "$jvm_dir/pid"
-            wait %%
-            status=$?
-            [[ -e $jvm_dir/status ]] && echo $status > "$jvm_dir/status"
-        } > /dev/null &
-        disown %%
+        $drip_daemon $JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
+                               "-Xbootclasspath/a:$DRIP_JAR:$JNA_JAR" \
+                               org.flatland.drip.Main "$main_class" "$jvm_dir" > /dev/null
     fi
 }
 
 function lock_dir {
     if mkdir "$jvm_dir/lock" 2> /dev/null; then
-        if kill -0 $(cat "$jvm_dir/pid") 2> /dev/null; then
+        if kill -0 $(cat "$jvm_dir/jvm.pid") 2> /dev/null; then
             echo $$ > "$jvm_dir/client.pid"
             active_jvm_dir=$jvm_dir
         fi
@@ -175,7 +180,7 @@ function find_jvm {
     done
 
     if [[ -z $active_jvm_dir ]]; then
-        exec java "${jvm_args[@]}" "${runtime_args[@]}" "$main_class" "${main_args[@]}"
+        exec $JAVA_CMD "${jvm_args[@]}" "${runtime_args[@]}" "$main_class" "${main_args[@]}"
     fi
 }
 
@@ -184,7 +189,7 @@ function kill_jvms {
 
     for jvm_dir in $DRIP_HOME/*/*/*-*; do
         if lock_dir; then
-            kill "$1" "$(cat $jvm_dir/pid)" 2> /dev/null
+            kill "$1" "$(cat $jvm_dir/jvm.pid)" 2> /dev/null
             rm -rf "$jvm_dir"
             killed=true
         fi
@@ -240,7 +245,7 @@ function wait_for_exit {
 
 function run_main {
     send_args
-    $DRIP_PROXY "$active_jvm_dir"/{in,out,err}
+    $drip_proxy "$active_jvm_dir"/{in,out,err}
 
     wait_for_exit
 
@@ -251,7 +256,7 @@ function run_drip_command {
     case $drip_command in
         version)
             echo "drip version \"$DRIP_VERSION\"" >&2
-            java -version;;
+            $JAVA_CMD -version;;
         kill)
             kill_jvms "$2";;
         ps)
@@ -260,7 +265,7 @@ function run_drip_command {
             if [[ -z $drip_dir ]]; then
                 http_get  "$DRIP_BIN_URL" "$script" || exit $?
                 chmod +x "$script"
-                rm "$DRIP_PROXY_SRC" # need to refetch in case it has changed
+                rm -rf "$DRIP_SRC" # need to refetch in case it has changed
             elif [[ -d $drip_dir/.git ]]; then
                 (cd "$drip_dir" && git pull)
             else
@@ -283,19 +288,20 @@ DRIP_VERSION=${DRIP_VERSION:-0.0.4}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
 DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar}
 DRIP_BIN_URL=${DRIP_BIN_URL:-https://raw.github.com/flatland/drip/master/bin/drip}
-DRIP_PROXY_URL=${DRIP_PROXY_URL:-https://raw.github.com/flatland/drip/master/src/drip_proxy.c}
-DRIP_PROXY_SRC=${DRIP_PROXY_SRC:-$DRIP_HOME/drip_proxy.c}
-DRIP_PROXY=${DRIP_PROXY:-$DRIP_HOME/drip_proxy}
+DRIP_SRC_URL=${DRIP_SRC_URL:-https://raw.github.com/flatland/drip/master/src}
+DRIP_SRC=${DRIP_SRC:-$DRIP_HOME/src}
 JNA_VERSION=${JNA_VERSION:-3.4.1}
 JNA_JAR_URL=${JNA_JAR_URL:-https://raw.github.com/twall/jna/$JNA_VERSION/dist/jna.jar}
 MVN_REPO=${MVN_REPO:-~/.m2/repository}
+JAVA_CMD=${JAVA_CMD:-java}
+JAVA_CMD=$(which java)
 
 bootstrap
 
 parse_args "$@"
 
 if [[ -z $drip_command ]]; then
-    [[ -z $java_command ]] || exec java $java_command
+    [[ -z $java_command ]] || exec $JAVA_CMD $java_command
     find_jvm
     run_main
     status=$?

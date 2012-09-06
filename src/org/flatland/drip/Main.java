@@ -13,6 +13,8 @@ import java.util.regex.Pattern;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.LastErrorException;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 public class Main {
   private List<Switchable> lazyStreams;
@@ -50,7 +52,7 @@ public class Main {
       // someone is already connected; let the process finish
     }
   }
-
+  
   private void startIdleKiller() {
     Thread idleKiller = new Thread() {
         public void run() {
@@ -60,6 +62,10 @@ public class Main {
 
     idleKiller.setDaemon(true);
     idleKiller.start();
+  }
+
+  public static void main(String[] args) throws Exception {
+    new Main(args[0], args[1]).start();
   }
 
   public void start() throws Exception {
@@ -91,10 +97,6 @@ public class Main {
     setControllingTerminal();
 
     invoke(main, split(mainArgs, "\u0000"));
-  }
-
-  public static void main(String[] args) throws Exception {
-    new Main(args[0], args[1]).start();
   }
 
   private Method mainMethod(String className)
@@ -177,8 +179,6 @@ public class Main {
     Integer fd = (Integer) field.get(fdesc);
     field.setAccessible(false);
 
-    LibC libc = (LibC) Native.loadLibrary("c", LibC.class);
-    libc.setsid();
     libc.ioctl(fd, TIOCSCTTY, 0);
   }
 
@@ -215,15 +215,11 @@ public class Main {
     return arg;
   }
 
-  private static final int TIOCSCTTY=536900705;
-  private static final int TIOCNOTTY=536900721;
+  private static final int TIOCSCTTY = 536900705;
 
   public interface LibC extends Library {
     int ioctl(int fildes, long request, Object... args) throws LastErrorException;
-    int setsid() throws LastErrorException;
-    int getpgrp();
-    int getpid();
-    int getsid(int pid);
-    void exit(int status);
   }
+
+  private static final LibC libc = (LibC) Native.loadLibrary("c", LibC.class);
 }
