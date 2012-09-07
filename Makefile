@@ -20,6 +20,7 @@ clean:
 	rm ${JAR}
 
 install: jar
+	mkdir -p ${PREFIX}
 	ln -sf $$PWD/bin/drip ${PREFIX}/drip
 
 release: jar
