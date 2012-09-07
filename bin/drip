@@ -159,6 +159,8 @@ function lock_dir {
         if [[ -e $pidfile ]] && kill -0 $(cat "$pidfile") 2> /dev/null; then
             echo $$ > "$jvm_dir/client.pid"
             active_jvm_dir=$jvm_dir
+        else
+            rm -rf "$jvm_dir"
         fi
         return 0
     else
