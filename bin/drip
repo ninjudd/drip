@@ -239,7 +239,7 @@ function send_args {
 
 function wait_for_exit {
     status=$(cat "$active_jvm_dir/status")
-#    rm -rf "$active_jvm_dir"
+    rm -rf "$active_jvm_dir"
 }
 
 function run_main {
