@@ -10,8 +10,9 @@
 #include <termios.h>
 #include <unistd.h>
 
-jmp_buf env;
-char* err_prefix;
+static char* jvm_dir;
+static jmp_buf env;
+static char* err_prefix;
 
 // Based on code from https://github.com/nelhage/reptyr
 
@@ -76,27 +77,25 @@ void proxy(int in, int out, int err) {
 
 int open_pty() {
   int fd = check("posix_openpt", posix_openpt(O_RDWR | O_NOCTTY));
-
   check("grantpt",  grantpt(fd));
   check("unlockpt", unlockpt(fd));
-
   return fd;
 }
 
-char* path(char* dir, char* base) {
+char* path(char* base) {
   static char path[PATH_MAX];
-  snprintf(path, PATH_MAX, "%s/%s", dir, base);
+  snprintf(path, PATH_MAX, "%s/%s", jvm_dir, base);
   return path;
 }
 
-int open_fifo(int oflag, char* dir, char* base) {
-  char* filename = path(dir, base);
+int open_fifo(char* base, int oflag) {
+  char* filename = path(base);
   check("mkfifo", mkfifo(filename, 0666));
   return check("open", open(filename, oflag));
 }
 
 void write_tty_name(char* tty_name, char* dir) {
-  FILE* tty = fopen(path(dir, "tty"), "w");
+  FILE* tty = fopen(path("tty"), "w");
   if (tty_name) fprintf(tty, "%s", tty_name);
   fclose(tty);
 }
@@ -110,7 +109,7 @@ int main(int argc, char** argv) {
     fprintf(stderr, "Usage: drip_proxy dir\n");
     exit(1);
   }
-  char* jvm_dir = argv[1];
+  jvm_dir = argv[1];
 
   char* tty_name = ttyname(0);
   struct termios prev;
@@ -131,23 +130,23 @@ int main(int argc, char** argv) {
       char* pty_name = ptsname(pty);
 
       in = pty;
-      check("symlink in", symlink(pty_name, path(jvm_dir, "in")));
+      check("symlink in", symlink(pty_name, path("in")));
 
       if (streql(tty_name, ttyname(1))) {
         out = pty;
-        check("symlink out", symlink(pty_name, path(jvm_dir, "out")));
+        check("symlink out", symlink(pty_name, path("out")));
       }
 
       if (streql(tty_name, ttyname(2))) {
         err = pty;
-        check("symlink err", symlink(pty_name, path(jvm_dir, "err")));
+        check("symlink err", symlink(pty_name, path("err")));
       }
     }
     write_tty_name(tty_name, jvm_dir);
 
-    if (!in)  in  = open_fifo(O_WRONLY, jvm_dir, "in");
-    if (!out) out = open_fifo(O_RDONLY, jvm_dir, "out");
-    if (!err) err = open_fifo(O_RDONLY, jvm_dir, "err");
+    if (!in)  in  = open_fifo("in",  O_WRONLY);
+    if (!out) out = open_fifo("out", O_RDONLY);
+    if (!err) err = open_fifo("err", O_RDONLY);
 
     proxy(in, out, err);
   } else { // catch
