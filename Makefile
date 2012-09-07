@@ -6,7 +6,7 @@ JAR=drip.jar
 all: jar compile
 
 %.class: %.java
-	javac -classpath ${HOME}/.m2/repository/com/sun/jna/3.4.1/jna-3.4.1.jar ${SOURCES}
+	javac ${SOURCES}
 
 ${JAR}: ${CLASSES}
 	jar cf ${JAR} -C src/ org

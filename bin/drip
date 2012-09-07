@@ -31,8 +31,6 @@ function bootstrap {
         fi
     done
 
-    JNA_JAR=${JNA_JAR:-$(mvn_get 'jna' 'com/sun' "$JNA_VERSION" "$JNA_JAR_URL")}
-
     if [[ -z $DRIP_JAR ]]; then
         local bin_dir=$(dirname $script)
         if [[ -r $bin_dir/../src/org/flatland/drip/Main.java ]]; then
@@ -140,11 +138,12 @@ function launch_jvm {
     if mkdir "$jvm_dir"; then
         mkfifo "$jvm_dir/control"
         mkfifo "$jvm_dir/status"
+        mkfifo "$jvm_dir/tty"
 
         export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 
         $drip_daemon $JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
-                               "-Xbootclasspath/a:$DRIP_JAR:$JNA_JAR" \
+                               "-Xbootclasspath/a:$DRIP_JAR" \
                                org.flatland.drip.Main "$main_class" "$jvm_dir" > /dev/null
     fi
 }
@@ -240,16 +239,14 @@ function send_args {
 
 function wait_for_exit {
     status=$(cat "$active_jvm_dir/status")
-    rm -rf "$active_jvm_dir"
+#    rm -rf "$active_jvm_dir"
 }
 
 function run_main {
     send_args
-    $drip_proxy "$active_jvm_dir"/{in,out,err}
+    $drip_proxy "$active_jvm_dir"
 
     wait_for_exit
-
-    exit $status
 }
 
 function run_drip_command {
@@ -283,15 +280,13 @@ function run_drip_command {
 # Let's go.
 
 DRIP_POOL=1
-DRIP_HOME=${DRIP_HOME:-~/.drip} # what if this starts with a dash?
+DRIP_HOME=${DRIP_HOME:-~/.drip}; mkdir -p "$DRIP_HOME"
 DRIP_VERSION=${DRIP_VERSION:-0.0.4}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
 DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar}
 DRIP_BIN_URL=${DRIP_BIN_URL:-https://raw.github.com/flatland/drip/master/bin/drip}
 DRIP_SRC_URL=${DRIP_SRC_URL:-https://raw.github.com/flatland/drip/master/src}
 DRIP_SRC=${DRIP_SRC:-$DRIP_HOME/src}
-JNA_VERSION=${JNA_VERSION:-3.4.1}
-JNA_JAR_URL=${JNA_JAR_URL:-https://raw.github.com/twall/jna/$JNA_VERSION/dist/jna.jar}
 MVN_REPO=${MVN_REPO:-~/.m2/repository}
 JAVA_CMD=${JAVA_CMD:-java}
 JAVA_CMD=$(which java)
@@ -304,7 +299,7 @@ if [[ -z $drip_command ]]; then
     [[ -z $java_command ]] || exec $JAVA_CMD $java_command
     find_jvm
     run_main
-    status=$?
+
     exit $status
 else
     run_drip_command

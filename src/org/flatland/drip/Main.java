@@ -10,9 +10,6 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import com.sun.jna.Library;
-import com.sun.jna.Native;
-import com.sun.jna.LastErrorException;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -78,7 +75,6 @@ public class Main {
     if (initArgs != null) {
       invoke(init == null ? main : init, split(initArgs, "\n"));
     }
-
     startIdleKiller();
 
     Scanner fromBash = new Scanner(new File(dir, "control"));
@@ -93,8 +89,6 @@ public class Main {
     flip(in);
     flip(out);
     flip(err);
-
-    setControllingTerminal();
 
     invoke(main, split(mainArgs, "\u0000"));
   }
@@ -111,7 +105,7 @@ public class Main {
 
   private String[] split(String str, String delim) {
     if (str.length() == 0) {
-      return null;
+      return new String[0];
     } else {
       Scanner s = new Scanner(str);
       s.useDelimiter(delim);
@@ -171,17 +165,6 @@ public class Main {
     s.flip();
   }
 
-  private void setControllingTerminal() throws Exception {
-    FileDescriptor fdesc = in.getFD();
-
-    Field field = fdesc.getClass().getDeclaredField("fd");
-    field.setAccessible(true);
-    Integer fd = (Integer) field.get(fdesc);
-    field.setAccessible(false);
-
-    libc.ioctl(fd, TIOCSCTTY, 0);
-  }
-
   private void reopenStreams() throws FileNotFoundException, IOException {
     this.in  = new SwitchableInputStream(System.in, new File(dir, "in"));
     this.out = new SwitchableOutputStream(System.out, new File(dir, "out"));
@@ -214,12 +197,4 @@ public class Main {
     }
     return arg;
   }
-
-  private static final int TIOCSCTTY = 536900705;
-
-  public interface LibC extends Library {
-    int ioctl(int fildes, long request, Object... args) throws LastErrorException;
-  }
-
-  private static final LibC libc = (LibC) Native.loadLibrary("c", LibC.class);
 }

@@ -94,8 +94,10 @@ function run_all_tests {
             fi
         done < "$file"
 
+        suite=$(basename $file .sh)
+
         echo
-        printf "%s %s\n" "$0" "$(basename $file .sh)"
+        printf "%s %s\n" "$0" "$suite"
         init_fixtures
         source ./helpers/init.sh
         source "$file"
@@ -103,6 +105,7 @@ function run_all_tests {
         for test in "${tests[@]}"; do
             ((test_count++))
             setup
+            [[ -z $VERBOSE ]] || printf "\n%s %s %s\n" "$0" "$suite" "$test"
             $test
             teardown
         done
