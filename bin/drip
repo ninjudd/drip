@@ -144,7 +144,7 @@ function launch_jvm {
 
         $drip_daemon $JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
                                "-Xbootclasspath/a:$DRIP_JAR" \
-                               org.flatland.drip.Main "$main_class" "$jvm_dir" > /dev/null
+                               org.flatland.drip.Main "$main_class" "$jvm_dir"
     fi
 }
 

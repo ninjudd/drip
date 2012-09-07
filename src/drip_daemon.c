@@ -15,11 +15,10 @@ int check(char* prefix, int n) {
   }
 }
 
-static char buf[PATH_MAX];
-
 char* path(char* dir, char* base) {
-  snprintf(buf, PATH_MAX, "%s/%s", dir, base);
-  return buf;
+  static char path[PATH_MAX];
+  snprintf(path, PATH_MAX, "%s/%s", dir, base);
+  return path;
 }
 
 void spit_int(char* dir, char* base, int i) {
@@ -29,6 +28,7 @@ void spit_int(char* dir, char* base, int i) {
 }
 
 char* slurp_line(char* dir, char* base) {
+  static char buf[PATH_MAX];
   FILE* file = fopen(path(dir, base), "r");
   char* str = fgets(buf, PATH_MAX, file);
   fclose(file);
@@ -41,8 +41,7 @@ int main(int argc, char **argv) {
   // Start a child process and exit the parent.
   if (check("fork parent", fork()) != 0) exit(0);
 
-  /* close(0); */
-  /* close(1); */
+  close(1);
   umask(0);
   check("setsid", setsid());
 

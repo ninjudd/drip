@@ -81,11 +81,10 @@ int open_pty() {
   return fd;
 }
 
-static char buf[PATH_MAX];
-
 char* path(char* dir, char* base) {
-  snprintf(buf, PATH_MAX, "%s/%s", dir, base);
-  return buf;
+  static char path[PATH_MAX];
+  snprintf(path, PATH_MAX, "%s/%s", dir, base);
+  return path;
 }
 
 int open_fifo(int oflag, char* dir, char* base) {
@@ -98,6 +97,10 @@ void write_tty_name(char* tty_name, char* dir) {
   FILE* tty = fopen(path(dir, "tty"), "w");
   if (tty_name) fprintf(tty, "%s", tty_name);
   fclose(tty);
+}
+
+int streql(char* s1, char* s2) {
+  return (s1 && s2 && strcmp(s1, s2) == 0);
 }
 
 int main(int argc, char** argv) {
@@ -115,7 +118,7 @@ int main(int argc, char** argv) {
   int out = 0;
   int err = 0;
 
-  if (setjmp(env) == 0) {
+  if (setjmp(env) == 0) { // try
     if (tty_name) {
       check("tcgetcattr", tcgetattr(0, &prev));
       struct termios raw = prev;
@@ -128,14 +131,12 @@ int main(int argc, char** argv) {
       in = pty;
       check("symlink in", symlink(pty_name, path(jvm_dir, "in")));
 
-      char* out_name = ttyname(1);
-      if (out_name && strcmp(tty_name, out_name) == 0) {
+      if (streql(tty_name, ttyname(1))) {
         out = pty;
         check("symlink out", symlink(pty_name, path(jvm_dir, "out")));
       }
 
-      char* err_name = ttyname(2);
-      if (err_name && strcmp(tty_name, err_name) == 0) {
+      if (streql(tty_name, ttyname(2))) {
         err = pty;
         check("symlink err", symlink(pty_name, path(jvm_dir, "err")));
       }
@@ -147,7 +148,7 @@ int main(int argc, char** argv) {
     if (!err) err = open_fifo(O_RDONLY, jvm_dir, "err");
 
     proxy(in, out, err);
-  } else {
+  } else { // catch
     exit_code = 1;
   }
 
