@@ -57,17 +57,18 @@ void proxy(int in, int out, int err) {
     }
 
     if (FD_ISSET(0, &set)) {
-      count = check("read in", read(0, buf, sizeof buf));
-      if (count == 0) return;
+      count = read(0, buf, sizeof buf);
+      if (count <= 0) return;
       writeall(in, buf, count);
     }
     if (FD_ISSET(out, &set)) {
-      count = check("read out", read(out, buf, sizeof buf));
-      if (count == 0) return;
+      count = read(out, buf, sizeof buf);
+      if (count <= 0) return;
       writeall(1, buf, count);
     }
     if (err != out && FD_ISSET(err, &set)) {
-      count = check("read err", read(err, buf, sizeof buf));
+      count = read(err, buf, sizeof buf);
+      if (count <= 0) return;
       writeall(2, buf, count);
     }
   }
