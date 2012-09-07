@@ -17,6 +17,11 @@ function http_get { # Adapted from http://github.com/technomancy/leiningen
 }
 
 function bootstrap {
+    drip_root=$DRIP_HOME/$DRIP_VERSION
+    drip_src=$drip_root/src
+    mkdir -p "$drip_root"
+
+
     script="$0"
 
     # Adapted from http://github.com/technomancy/leiningen
@@ -50,11 +55,11 @@ function bootstrap {
 function compile {
     local base=$1
     local src_file
-    local bin_file="$DRIP_HOME/$base"
+    local bin_file="$drip_root/$base"
 
     if [[ -z $drip_dir ]]; then
-        mkdir -p "$DRIP_SRC"
-        src_file=$DRIP_SRC/$base.c
+        mkdir -p "$drip_src"
+        src_file=$drip_src/$base.c
         [[ -e $src_file ]] || http_get "$DRIP_SRC_URL/$base.c" "$src_file"
     else
         src_file=$drip_dir/src/$base.c
@@ -118,7 +123,7 @@ function parse_args {
 function make_sha_path {
     opts="${jvm_args[*]} $main_class"
     sha=$(echo -n "$opts" | git hash-object --stdin)
-    sha_path=$DRIP_HOME/$DRIP_VERSION/$sha
+    sha_path=$drip_root/$sha
     mkdir -p "$sha_path"
     echo -n "$opts" > $sha_path/opts
 }
@@ -150,7 +155,8 @@ function launch_jvm {
 
 function lock_dir {
     if mkdir "$jvm_dir/lock" 2> /dev/null; then
-        if kill -0 $(cat "$jvm_dir/jvm.pid") 2> /dev/null; then
+        local pidfile="$jvm_dir/jvm.pid"
+        if [[ -e $pidfile ]] && kill -0 $(cat "$pidfile") 2> /dev/null; then
             echo $$ > "$jvm_dir/client.pid"
             active_jvm_dir=$jvm_dir
         fi
@@ -262,7 +268,7 @@ function run_drip_command {
             if [[ -z $drip_dir ]]; then
                 http_get  "$DRIP_BIN_URL" "$script" || exit $?
                 chmod +x "$script"
-                rm -rf "$DRIP_SRC" # need to refetch in case it has changed
+                rm -rf "$drip_src" # need to refetch in case it has changed
             elif [[ -d $drip_dir/.git ]]; then
                 (cd "$drip_dir" && git pull)
             else
@@ -280,14 +286,13 @@ function run_drip_command {
 # Let's go.
 
 DRIP_POOL=1
-DRIP_HOME=${DRIP_HOME:-~/.drip}; mkdir -p "$DRIP_HOME"
+DRIP_HOME=${DRIP_HOME:-~/.drip}
 DRIP_VERSION=${DRIP_VERSION:-0.1.0}
 DRIP_BRANCH=${DRIP_BRANCH:-master}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
 DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar}
 DRIP_BIN_URL=${DRIP_BIN_URL:-https://raw.github.com/flatland/drip/$DRIP_BRANCH/bin/drip}
 DRIP_SRC_URL=${DRIP_SRC_URL:-https://raw.github.com/flatland/drip/$DRIP_BRANCH/src}
-DRIP_SRC=${DRIP_SRC:-$DRIP_HOME/src}
 MVN_REPO=${MVN_REPO:-~/.m2/repository}
 JAVA_CMD=${JAVA_CMD:-java}
 JAVA_CMD=$(which java)
