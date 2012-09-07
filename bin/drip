@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
 
 function http_get { # Adapted from http://github.com/technomancy/leiningen
+    local url="$1" path="$2"
+
     if [[ -z $http_get ]]; then
         if type -p curl >/dev/null 2>&1; then
-            http_get='curl -f -L -o'
+            http_get='curl -fL# -o'
         else
             http_get='wget -O'
         fi
     fi
-    mkdir -p "$(dirname $1)"
-    $http_get "$1.pending" "$2" || return 1
-    mv -- "$1.pending" "$1"
+    mkdir -p "$(dirname $path)"
+    echo "Downloading $url..." >&2
+    $http_get "$path.pending" "$url" || return 1
+    mv -- "$path.pending" "$path"
 }
 
-function find_drip_jar {
+function bootstrap {
     script="$0"
 
     # Adapted from http://github.com/technomancy/leiningen
@@ -37,10 +40,36 @@ function find_drip_jar {
             (cd -- "$drip_dir" && make -s jar)
         else
             # Standalone
-            DRIP_JAR=~/.m2/repository/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar
-            [[ -e $DRIP_JAR ]] || http_get "$DRIP_JAR" "$DRIP_JAR_URL"
+            DRIP_JAR=$(mvn_get 'drip' 'org/flatland' "$DRIP_VERSION" "$DRIP_JAR_URL")
         fi
     fi
+    drip_proxy=$(compile 'drip_proxy')
+    drip_daemon=$(compile 'drip_daemon')
+}
+
+function compile {
+    local base=$1
+    local src_file
+    local bin_file="$DRIP_HOME/$base"
+
+    if [[ -z $drip_dir ]]; then
+        mkdir -p "$DRIP_SRC"
+        src_file=$DRIP_SRC/$base.c
+        [[ -e $src_file ]] || http_get "$DRIP_SRC_URL/$base.c" "$src_file"
+    else
+        src_file=$drip_dir/src/$base.c
+    fi
+    if [[ $src_file -nt $bin_file ]]; then
+        gcc $src_file -o $bin_file
+    fi
+    echo "$bin_file"
+}
+
+function mvn_get {
+    local artifact="$1" group="$2" version="$3" url="$4"
+    local jar="$MVN_REPO/$group/$artifact/$version/$artifact-$version.jar"
+    [[ -e $jar ]] || http_get "$url" "$jar"
+    printf '%s' "$jar"
 }
 
 declare -a jvm_args
@@ -109,27 +138,19 @@ function launch_jvm {
     if mkdir "$jvm_dir"; then
         mkfifo "$jvm_dir/control"
         mkfifo "$jvm_dir/status"
-        mkfifo "$jvm_dir/err"
-        mkfifo "$jvm_dir/out"
-        mkfifo "$jvm_dir/in"
+        mkfifo "$jvm_dir/tty"
 
         export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 
-        { # Need to write the exit status to a file.
-            java "${jvm_args[@]}" "-Xbootclasspath/a:$DRIP_JAR" \
-                org.flatland.drip.Main "$main_class" "$jvm_dir" &
-            echo $! > "$jvm_dir/pid"
-            wait %%
-            status=$?
-            [[ -e $jvm_dir/status ]] && echo $status > "$jvm_dir/status"
-        } > /dev/null &
-        disown %%
+        $drip_daemon $JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
+                               "-Xbootclasspath/a:$DRIP_JAR" \
+                               org.flatland.drip.Main "$main_class" "$jvm_dir"
     fi
 }
 
 function lock_dir {
     if mkdir "$jvm_dir/lock" 2> /dev/null; then
-        if kill -0 $(cat "$jvm_dir/pid") 2> /dev/null; then
+        if kill -0 $(cat "$jvm_dir/jvm.pid") 2> /dev/null; then
             echo $$ > "$jvm_dir/client.pid"
             active_jvm_dir=$jvm_dir
         fi
@@ -158,7 +179,7 @@ function find_jvm {
     done
 
     if [[ -z $active_jvm_dir ]]; then
-        exec java "${jvm_args[@]}" "${runtime_args[@]}" "$main_class" "${main_args[@]}"
+        exec $JAVA_CMD "${jvm_args[@]}" "${runtime_args[@]}" "$main_class" "${main_args[@]}"
     fi
 }
 
@@ -167,7 +188,7 @@ function kill_jvms {
 
     for jvm_dir in $DRIP_HOME/*/*/*-*; do
         if lock_dir; then
-            kill "$1" "$(cat $jvm_dir/pid)" 2> /dev/null
+            kill "$1" "$(cat $jvm_dir/jvm.pid)" 2> /dev/null
             rm -rf "$jvm_dir"
             killed=true
         fi
@@ -221,49 +242,35 @@ function wait_for_exit {
     rm -rf "$active_jvm_dir"
 }
 
-function duplex_stdin {
-    # This has to be in a separate function so we can close the fifo when we get Ctrl-D.
-    exec 3> "$active_jvm_dir/in"
-    cat >&3 2> /dev/null
-    exec 3>&-
-}
-
-function run_main {(
-    # run in subshell to avoid Terminated message
+function run_main {
     send_args
-
-    cat "$active_jvm_dir/err" >&2 & err_pid=$!
-    cat "$active_jvm_dir/out"     & out_pid=$!
-    duplex_stdin <&0              & in_pid=$!
+    $drip_proxy "$active_jvm_dir"
 
     wait_for_exit
-
-    wait $out_pid $err_pid
-    kill $in_pid 2> /dev/null
-    exit $status
-)}
+}
 
 function run_drip_command {
     case $drip_command in
         version)
             echo "drip version \"$DRIP_VERSION\"" >&2
-            java -version;;
+            $JAVA_CMD -version;;
         kill)
             kill_jvms "$2";;
         ps)
             jps -vlm | grep org.flatland.drip.Main;;
         upgrade)
             if [[ -z $drip_dir ]]; then
-                http_get "$script" "$DRIP_BIN_URL" || exit 1
+                http_get  "$DRIP_BIN_URL" "$script" || exit $?
                 chmod +x "$script"
+                rm -rf "$DRIP_SRC" # need to refetch in case it has changed
             elif [[ -d $drip_dir/.git ]]; then
                 (cd "$drip_dir" && git pull)
-                exit $?
             else
                 echo Please use your package manager to upgrade Drip.
                 echo For example:
                 echo   brew update && brew upgrade drip
-            fi;;
+            fi
+            exit $?;;
         *)
             echo Unknown command: $drip_command
             exit 1;;
@@ -273,21 +280,26 @@ function run_drip_command {
 # Let's go.
 
 DRIP_POOL=1
-DRIP_HOME=${DRIP_HOME:-~/.drip} # what if this starts with a dash?
+DRIP_HOME=${DRIP_HOME:-~/.drip}; mkdir -p "$DRIP_HOME"
 DRIP_VERSION=${DRIP_VERSION:-0.0.4}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
-DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/${DRIP_VERSION}/drip-${DRIP_VERSION}.jar}
-DRIP_BIN_URL=${DRIP_BIN_URL:-http://drip.flatland.org}
+DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar}
+DRIP_BIN_URL=${DRIP_BIN_URL:-https://raw.github.com/flatland/drip/master/bin/drip}
+DRIP_SRC_URL=${DRIP_SRC_URL:-https://raw.github.com/flatland/drip/master/src}
+DRIP_SRC=${DRIP_SRC:-$DRIP_HOME/src}
+MVN_REPO=${MVN_REPO:-~/.m2/repository}
+JAVA_CMD=${JAVA_CMD:-java}
+JAVA_CMD=$(which java)
 
-find_drip_jar
+bootstrap
 
 parse_args "$@"
 
 if [[ -z $drip_command ]]; then
-    [[ -z $java_command ]] || exec java $java_command
+    [[ -z $java_command ]] || exec $JAVA_CMD $java_command
     find_jvm
     run_main
-    status=$?
+
     exit $status
 else
     run_drip_command

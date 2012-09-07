@@ -3,15 +3,19 @@ import java.io.*;
 
 // not safe to use flip() while any other threads are accessing this object in any way
 public class SwitchableInputStream extends InputStream implements Switchable {
-  private final File pathToNewIn;
+  private final File path;
 
   private InputStream in;
   private boolean switched;
 
   public SwitchableInputStream(InputStream oldIn, File path) {
     this.in = oldIn;
-    this.pathToNewIn = path;
+    this.path = path;
     this.switched = false;
+  }
+
+  public File path() {
+    return path;
   }
 
   public void flip() throws IllegalStateException, IOException {
@@ -21,7 +25,7 @@ public class SwitchableInputStream extends InputStream implements Switchable {
     switched = true;
     in.close();
 
-    in = new FileInputStream(pathToNewIn);
+    in = new FileInputStream(path);
   }
 
   public int read() throws IOException {
@@ -46,5 +50,9 @@ public class SwitchableInputStream extends InputStream implements Switchable {
 
   public void close() throws IOException {
     in.close();
+  }
+
+  public FileDescriptor getFD() throws IOException {
+    return ((FileInputStream) in).getFD();
   }
 }

@@ -10,11 +10,16 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 public class Main {
   private List<Switchable> lazyStreams;
   private String mainClass;
   private File dir;
+  private SwitchableOutputStream err;
+  private SwitchableOutputStream out;
+  private SwitchableInputStream  in;
 
   public Main(String mainClass, String dir) {
     this.mainClass = mainClass.replace('/', '.');
@@ -33,7 +38,7 @@ public class Main {
     try {
       Thread.sleep(idleTime * 60 * 1000); // convert minutes to ms
     } catch (InterruptedException e) {
-      System.err.println("drip: Interrutped??");
+      System.err.println("drip: Interrupted??");
       return; // I guess someone wanted to kill the timeout thread?
     }
 
@@ -44,7 +49,7 @@ public class Main {
       // someone is already connected; let the process finish
     }
   }
-
+  
   private void startIdleKiller() {
     Thread idleKiller = new Thread() {
         public void run() {
@@ -54,6 +59,10 @@ public class Main {
 
     idleKiller.setDaemon(true);
     idleKiller.start();
+  }
+
+  public static void main(String[] args) throws Exception {
+    new Main(args[0], args[1]).start();
   }
 
   public void start() throws Exception {
@@ -66,7 +75,6 @@ public class Main {
     if (initArgs != null) {
       invoke(init == null ? main : init, split(initArgs, "\n"));
     }
-
     startIdleKiller();
 
     Scanner fromBash = new Scanner(new File(dir, "control"));
@@ -75,18 +83,14 @@ public class Main {
     String environment = readString(fromBash);
     fromBash.close();
 
-    for (Switchable o : lazyStreams) {
-      o.flip();
-    }
-
     mergeEnv(parseEnv(environment));
     setProperties(runtimeArgs);
 
-    invoke(main, split(mainArgs, "\u0000"));
-  }
+    flip(in);
+    flip(out);
+    flip(err);
 
-  public static void main(String[] args) throws Exception {
-    new Main(args[0], args[1]).start();
+    invoke(main, split(mainArgs, "\u0000"));
   }
 
   private Method mainMethod(String className)
@@ -101,7 +105,7 @@ public class Main {
 
   private String[] split(String str, String delim) {
     if (str.length() == 0) {
-      return null;
+      return new String[0];
     } else {
       Scanner s = new Scanner(str);
       s.useDelimiter(delim);
@@ -115,9 +119,7 @@ public class Main {
   }
 
   private void invoke(Method main, String[] args) throws Exception {
-    if (args != null) {
-      main.invoke(null, (Object)args);
-    }
+    main.invoke(null, (Object)args);
   }
 
   private void setProperties(String runtimeArgs) {
@@ -153,15 +155,24 @@ public class Main {
     field.setAccessible(false);
   }
 
-  private void reopenStreams() throws FileNotFoundException, IOException {
-    SwitchableOutputStream stderr = new SwitchableOutputStream(System.err, new File(dir, "err"));
-    SwitchableOutputStream stdout = new SwitchableOutputStream(System.out, new File(dir, "out"));
-    SwitchableInputStream stdin = new SwitchableInputStream(System.in, new File(dir, "in"));
-    lazyStreams = Arrays.<Switchable>asList(stderr, stdout, stdin);
+  private void flip(Switchable s) throws IllegalStateException, IOException {
+    while (! s.path().exists()) {
+      try {
+        Thread.sleep(50);
+      } catch (InterruptedException e) {
+      }
+    }
+    s.flip();
+  }
 
-    System.setErr(new PrintStream(stderr));
-    System.setOut(new PrintStream(stdout));
-    System.setIn(new BufferedInputStream(stdin));
+  private void reopenStreams() throws FileNotFoundException, IOException {
+    this.in  = new SwitchableInputStream(System.in, new File(dir, "in"));
+    this.out = new SwitchableOutputStream(System.out, new File(dir, "out"));
+    this.err = new SwitchableOutputStream(System.err, new File(dir, "err"));
+
+    System.setIn(new BufferedInputStream(in));
+    System.setOut(new PrintStream(out));
+    System.setErr(new PrintStream(err));
   }
 
   private static final Pattern EVERYTHING = Pattern.compile(".+", Pattern.DOTALL);

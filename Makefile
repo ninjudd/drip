@@ -3,7 +3,7 @@ SOURCES=$(wildcard src/org/flatland/drip/*.java)
 CLASSES=$(SOURCES:.java=.class)
 JAR=drip.jar
 
-all: jar
+all: jar compile
 
 %.class: %.java
 	javac ${SOURCES}
