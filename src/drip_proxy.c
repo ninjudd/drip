@@ -1,13 +1,14 @@
+#define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <setjmp.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/select.h>
 #include <sys/types.h>
 #include <termios.h>
+#include <unistd.h>
 
 jmp_buf env;
 char* err_prefix;
