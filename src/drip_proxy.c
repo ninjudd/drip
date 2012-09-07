@@ -94,12 +94,6 @@ int open_fifo(char* base, int oflag) {
   return check("open", open(filename, oflag));
 }
 
-void write_tty_name(char* tty_name, char* dir) {
-  FILE* tty = fopen(path("tty"), "w");
-  if (tty_name) fprintf(tty, "%s", tty_name);
-  fclose(tty);
-}
-
 int streql(char* s1, char* s2) {
   return (s1 && s2 && strcmp(s1, s2) == 0);
 }
@@ -142,7 +136,6 @@ int main(int argc, char** argv) {
         check("symlink err", symlink(pty_name, path("err")));
       }
     }
-    write_tty_name(tty_name, jvm_dir);
 
     if (!in)  in  = open_fifo("in",  O_WRONLY);
     if (!out) out = open_fifo("out", O_RDONLY);

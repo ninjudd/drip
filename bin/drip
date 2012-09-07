@@ -143,7 +143,6 @@ function launch_jvm {
     if mkdir "$jvm_dir"; then
         mkfifo "$jvm_dir/control"
         mkfifo "$jvm_dir/status"
-        mkfifo "$jvm_dir/tty"
 
         export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 

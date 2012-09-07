@@ -1,11 +1,8 @@
 #define _GNU_SOURCE
 #include <errno.h>
-#include <fcntl.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
 
 static char* jvm_dir;
 
@@ -30,14 +27,6 @@ void spit_int(char* base, int i) {
   fclose(file);
 }
 
-char* slurp_line(char* base) {
-  static char buf[PATH_MAX];
-  FILE* file = fopen(path(base), "r");
-  char* str = fgets(buf, PATH_MAX, file);
-  fclose(file);
-  return str;
-}
-
 int main(int argc, char **argv) {
   jvm_dir = argv[argc - 1];
 
@@ -46,22 +35,16 @@ int main(int argc, char **argv) {
 
   close(1);
   umask(0);
-  check("setsid", setsid());
 
-  int pid = check("fork child", fork());
-  if (pid == 0) {
+  int child = check("fork child", fork());
+  if (child == 0) {
+    check("setsid", setsid());
     check("execv", execv(argv[1], argv+1));
   } else {
     spit_int("jvm.pid", child);
 
-    // Set controlling terminal.
-    char* tty_name = slurp_line(jvm_dir, "tty");
-
-    int fd = open(tty_name, O_NONBLOCK);
-    ioctl(fd, TIOCSCTTY, 0);
-
     int status;
-    waitpid(pid, &status, 0);
+    wait(&status);
     spit_int("status", status/256);
   }
 }
