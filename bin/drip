@@ -282,7 +282,7 @@ function run_drip_command {
 DRIP_POOL=1
 DRIP_HOME=${DRIP_HOME:-~/.drip}; mkdir -p "$DRIP_HOME"
 DRIP_VERSION=${DRIP_VERSION:-0.1.0}
-DRIP_BRANCH=${DRIP_BRANCH:-develop}
+DRIP_BRANCH=${DRIP_BRANCH:-master}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
 DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar}
 DRIP_BIN_URL=${DRIP_BIN_URL:-https://raw.github.com/flatland/drip/$DRIP_BRANCH/bin/drip}
