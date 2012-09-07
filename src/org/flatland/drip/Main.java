@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
 
 public class Main {
   private List<Switchable> lazyStreams;
