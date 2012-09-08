@@ -51,6 +51,7 @@ function bootstrap {
             (cd -- "$drip_dir" && make -s jar)
         else
             # Standalone
+            drip_dir=
             drip_install=standalone
             DRIP_JAR=$(mvn_get 'drip' 'org/flatland' "$DRIP_VERSION" "$DRIP_JAR_URL")
         fi
