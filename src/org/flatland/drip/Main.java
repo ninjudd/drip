@@ -1,6 +1,7 @@
 package org.flatland.drip;
 import java.lang.reflect.Method;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.io.*;
 import java.util.Map;
 import java.util.HashMap;
@@ -47,7 +48,7 @@ public class Main {
       // someone is already connected; let the process finish
     }
   }
-  
+
   private void startIdleKiller() {
     Thread idleKiller = new Thread() {
         public void run() {
@@ -67,7 +68,6 @@ public class Main {
     reopenStreams();
 
     Method main = mainMethod(mainClass);
-
     Method init = mainMethod(System.getenv("DRIP_INIT_CLASS"));
     String initArgs = System.getenv("DRIP_INIT");
     if (initArgs != null) {
@@ -83,10 +83,7 @@ public class Main {
 
     mergeEnv(parseEnv(environment));
     setProperties(runtimeArgs);
-
-    flip(in);
-    flip(out);
-    flip(err);
+    switchStreams();
 
     invoke(main, split(mainArgs, "\u0000"));
   }
@@ -138,7 +135,7 @@ public class Main {
     return env;
   }
 
-  @SuppressWarnings("unchecked") // we're hacking a map with reflection
+  @SuppressWarnings("unchecked")
   private void mergeEnv(Map<String, String> newEnv)
     throws NoSuchFieldException, IllegalAccessException {
     Map<String, String> env = System.getenv();
@@ -150,6 +147,15 @@ public class Main {
     Field field = classToHack.getDeclaredField("m");
     field.setAccessible(true);
     ((Map<String,String>)field.get(env)).putAll(newEnv);
+    field.setAccessible(false);
+  }
+
+  @SuppressWarnings("unchecked")
+  static void replaceFileDescriptor(FileDescriptor a, FileDescriptor b)
+    throws NoSuchFieldException, IllegalAccessException {
+    Field field = FileDescriptor.class.getDeclaredField("fd");
+    field.setAccessible(true);
+    field.set(a, field.get(b));
     field.setAccessible(false);
   }
 
@@ -171,6 +177,16 @@ public class Main {
     System.setIn(new BufferedInputStream(in));
     System.setOut(new PrintStream(out));
     System.setErr(new PrintStream(err));
+  }
+
+  private void switchStreams() throws Exception {
+    flip(in);
+    flip(out);
+    flip(err);
+
+    replaceFileDescriptor(FileDescriptor.in,  this.in.getFD());
+    replaceFileDescriptor(FileDescriptor.out, this.out.getFD());
+    replaceFileDescriptor(FileDescriptor.err, this.err.getFD());
   }
 
   private static final Pattern EVERYTHING = Pattern.compile(".+", Pattern.DOTALL);
