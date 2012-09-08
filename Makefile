@@ -1,28 +1,30 @@
 prefix=~/bin
 java_src=$(wildcard src/org/flatland/drip/*.java)
 c_src=$(wildcard src/*.c)
-classes=$(java_src:.java=.class)
+classes=$(subst src,classes,$(java_src:.java=.class))
 binaries=$(subst src,bin,$(c_src:.c=))
 jar=drip.jar
 
 all: compile jar
 
-%.class: %.java
-	javac ${java_src}
+classes/%.class: src/%.java
+	mkdir -p classes/
+	javac ${java_src} -d classes/
 
 bin/%: src/%.c
 	gcc $< -o $@
 
 ${jar}: ${classes}
 	jar cf ${jar} -C src/ org
+	jar uf ${jar} -C classes/ org
 
 jar: ${jar}
 
 compile: ${binaries} ${classes}
 
 clean:
+	rm -rf classes
 	rm -f ${binaries}
-	rm -f ${classes}
 	rm -f ${jar}
 
 install: jar
