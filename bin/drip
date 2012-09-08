@@ -38,13 +38,20 @@ function bootstrap {
 
     if [[ -z $DRIP_JAR ]]; then
         local bin_dir=$(dirname $script)
-        if [[ -r $bin_dir/../src/org/flatland/drip/Main.java ]]; then
-            # Checkout
-            drip_dir=$bin_dir/..
+        drip_dir=$bin_dir/..
+        if [[ -r $drip_dir/src/org/flatland/drip/Main.java ]]; then
+            # Checkout or package
+            if [[ -d $drip_dir/.git ]]; then
+                drip_install=checkout
+            else
+                drip_install=package
+            fi
+
             DRIP_JAR=$drip_dir/drip.jar
             (cd -- "$drip_dir" && make -s jar)
         else
             # Standalone
+            drip_install=standalone
             DRIP_JAR=$(mvn_get 'drip' 'org/flatland' "$DRIP_VERSION" "$DRIP_JAR_URL")
         fi
     fi
@@ -282,24 +289,27 @@ function run_main {
 function run_drip_command {
     case $drip_command in
         version)
-            echo "drip version \"$DRIP_VERSION\"" >&2
-            $JAVA_CMD -version;;
+            if [[ $drip_install == checkout ]]; then
+                git_sha="$(cd "$drip_dir"; git rev-parse --short HEAD)"
+            fi
+            printf 'drip version "%s" %s %s\n' $DRIP_VERSION $drip_install $git_sha;;
         kill)
             kill_jvms "$2";;
         ps)
             jps -vlm | grep org.flatland.drip.Main;;
         upgrade)
-            if [[ -z $drip_dir ]]; then
-                http_get  "$DRIP_BIN_URL" "$script" || exit $?
-                chmod +x "$script"
-                rm -rf "$drip_src" # need to refetch in case it has changed
-            elif [[ -d $drip_dir/.git ]]; then
-                (cd "$drip_dir" && git pull)
-            else
-                echo Please use your package manager to upgrade Drip.
-                echo For example:
-                echo   brew update && brew upgrade drip
-            fi
+            case $drip_install in
+                standalone)
+                    rm -rf "$drip_src" # need to refetch in case it has changed
+                    http_get  "$DRIP_BIN_URL" "$script" || exit $?
+                    chmod +x "$script";;
+                checkout)
+                    (cd "$drip_dir" && git pull);;
+                package)
+                    echo Please use your package manager to upgrade Drip.
+                    echo For example:
+                    echo   brew update && brew upgrade drip
+            esac
             exit $?;;
         *)
             echo Unknown command: $drip_command
