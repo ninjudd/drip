@@ -154,19 +154,23 @@ function launch_jvm {
     fi
 }
 
+function kill_jvm {
+    local signal=$1
+    local pid=$(cat "$jvm_dir/jvm.pid" 2> /dev/null)
+    kill "$signal" $pid 2> /dev/null
+}
+
 function lock_dir {
     if mkdir "$jvm_dir/lock" 2> /dev/null; then
-        local pidfile="$jvm_dir/jvm.pid"
-        if [[ -e $pidfile ]] && kill -0 $(cat "$pidfile") 2> /dev/null; then
+        if kill_jvm -0; then
             echo $$ > "$jvm_dir/client.pid"
             active_jvm_dir=$jvm_dir
+            return 0
         else
             rm -rf "$jvm_dir"
         fi
-        return 0
-    else
-        return 1
     fi
+    return 0
 }
 
 function find_jvm {
@@ -195,12 +199,24 @@ function find_jvm {
 function kill_jvms {
     local killed=false
 
-    for jvm_dir in $DRIP_HOME/*/*/*-*; do
-        if lock_dir; then
-            kill "$1" "$(cat $jvm_dir/jvm.pid)" 2> /dev/null
-            rm -rf "$jvm_dir"
-            killed=true
-        fi
+    for version_dir in $DRIP_HOME/*; do
+        [[ -d $version_dir ]] || continue
+        for sha_dir in $version_dir/*; do
+            [[ -d $sha_dir ]] || continue
+            [[ $sha_dir != $version_dir/src ]] || continue
+            for jvm_dir in $sha_dir/*-*; do
+                [[ -d $jvm_dir ]] || continue
+                if lock_dir; then
+                    kill_jvm "$1"
+                    rm -rf "$jvm_dir"
+                    killed=true
+                fi
+            done
+            local dirs=($sha_dir/*)
+            if [[ "${dirs[*]}" == "$sha_dir/opts" ]]; then
+                rm -rf "$sha_dir"
+            fi
+        done
     done
 
     $killed || echo "No idle Drip JVM running"
