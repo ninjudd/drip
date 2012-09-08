@@ -58,6 +58,7 @@ function bootstrap {
     fi
     drip_proxy=$(compile 'drip_proxy')
     drip_daemon=$(compile 'drip_daemon')
+    [[ -e $drip_proxy && -e $drip_daemon ]] || exit 1
 }
 
 function compile {
