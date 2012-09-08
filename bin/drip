@@ -82,6 +82,7 @@ declare -a main_args
 declare -a runtime_args
 
 function parse_args {
+    unset drip_command java_command
     if [[ $# -eq 0 ]]; then
         echo 'Usage: drip [command | same args as java]'
         echo
@@ -99,6 +100,7 @@ function parse_args {
         return
     fi
 
+    unset bootclasspath main_class main_args runtime_args
     local classpath=false
     for arg in "$@"; do
         if [[ -z $main_class ]]; then
@@ -108,6 +110,7 @@ function parse_args {
                 classpath=true
             elif [[ $arg == -Xbootclasspath/a:* ]]; then
                 bootclasspath=${arg#-Xbootclasspath/a:}
+                continue
             elif [[ $arg == --* ]]; then
                 runtime_args+=("${arg:1}")
                 continue
@@ -192,7 +195,9 @@ function find_jvm {
     done
 
     if [[ -z $active_jvm_dir ]]; then
-        exec $JAVA_CMD "${jvm_args[@]}" "${runtime_args[@]}" "$main_class" "${main_args[@]}"
+        exec $JAVA_CMD "${jvm_args[@]}" "${runtime_args[@]}" \
+                       "-Xbootclasspath/a:$bootclasspath" \
+                       "$main_class" "${main_args[@]}"
     fi
 }
 
