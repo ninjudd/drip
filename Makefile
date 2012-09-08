@@ -1,36 +1,36 @@
-PREFIX=~/bin
-JAVA_SRC=$(wildcard src/org/flatland/drip/*.java)
-C_SRC=$(wildcard src/*.c)
-CLASSES=$(JAVA_SRC:.java=.class)
-BINARIES=$(subst src,bin,$(C_SRC:.c=))
-JAR=drip.jar
+prefix=~/bin
+java_src=$(wildcard src/org/flatland/drip/*.java)
+c_src=$(wildcard src/*.c)
+classes=$(java_src:.java=.class)
+binaries=$(subst src,bin,$(c_src:.c=))
+jar=drip.jar
 
 all: compile jar
 
 %.class: %.java
-	javac ${JAVA_SRC}
+	javac ${java_src}
 
 bin/%: src/%.c
 	gcc $< -o $@
 
-${JAR}: ${CLASSES}
-	jar cf ${JAR} -C src/ org
+${jar}: ${classes}
+	jar cf ${jar} -C src/ org
 
-jar: ${JAR}
+jar: ${jar}
 
-compile: ${BINARIES} ${CLASSES}
+compile: ${binaries} ${classes}
 
 clean:
-	rm -f ${BINARIES}
-	rm -f ${CLASSES}
-	rm -f ${JAR}
+	rm -f ${binaries}
+	rm -f ${classes}
+	rm -f ${jar}
 
 install: jar
-	mkdir -p ${PREFIX}
-	ln -sf $$PWD/bin/drip ${PREFIX}/drip
+	mkdir -p ${prefix}
+	ln -sf $$PWD/bin/drip ${prefix}/drip
 
 release: jar
-	scp ${JAR} pom.xml clojars@clojars.org:
+	scp ${jar} pom.xml clojars@clojars.org:
 
 test: jar test/clojure.jar test/jruby.jar test/scala test/test/Main.class
 	test/run
@@ -38,18 +38,18 @@ test: jar test/clojure.jar test/jruby.jar test/scala test/test/Main.class
 test/test/Main.class: test/test/Main.java
 	javac $<
 
-CLOJURE_URL=http://repo1.maven.org/maven2/org/clojure/clojure/1.4.0/clojure-1.4.0.jar
-JRUBY_URL=http://jruby.org.s3.amazonaws.com/downloads/1.6.7.2/jruby-complete-1.6.7.2.jar
-SCALA_URL=http://www.scala-lang.org/downloads/distrib/files/scala-2.9.2.tgz
+clojure_url=http://repo1.maven.org/maven2/org/clojure/clojure/1.4.0/clojure-1.4.0.jar
+jruby_url=http://jruby.org.s3.amazonaws.com/downloads/1.6.7.2/jruby-complete-1.6.7.2.jar
+scala_url=http://www.scala-lang.org/downloads/distrib/files/scala-2.9.2.tgz
 
 test/clojure.jar:
-	curl -# ${CLOJURE_URL} > $@
+	curl -# ${clojure_url} > $@
 
 test/jruby.jar:
-	curl -# ${JRUBY_URL} > $@
+	curl -# ${jruby_url} > $@
 
 test/scala.tgz:
-	curl -# ${SCALA_URL} > $@
+	curl -# ${scala_url} > $@
 
 test/scala: test/scala.tgz
 	tar xzf $< -m -C test
