@@ -2,8 +2,8 @@ Drip is a launcher for the Java Virtual Machine that provides much faster
 startup times than the `java` command. The `drip` script is intended to be a
 drop-in replacement for the `java` command, only faster.
 
-Drip is a single bash script and a small amount of Java code. It is intended to
-work with any JVM-based language and anywhere bash is available.
+Drip is a single bash script and a little bit of C and Java code. It is intended
+to work with any JVM-based language and anywhere bash is available.
 
 # How does it work?
 
