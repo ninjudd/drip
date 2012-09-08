@@ -36,29 +36,30 @@ function bootstrap {
         fi
     done
 
-    if [[ -z $DRIP_JAR ]]; then
-        local bin_dir=$(dirname $script)
-        drip_dir=$bin_dir/..
-        if [[ -r $drip_dir/src/org/flatland/drip/Main.java ]]; then
-            # Checkout or package
-            if [[ -d $drip_dir/.git ]]; then
-                drip_install=checkout
-            else
-                drip_install=package
-            fi
-
-            DRIP_JAR=$drip_dir/drip.jar
-            (cd -- "$drip_dir" && make -s jar)
+    local bin_dir=$(dirname $script)
+    drip_dir=$bin_dir/..
+    if [[ -r $drip_dir/src/org/flatland/drip/Main.java ]]; then
+        # Checkout or package
+        if [[ -d $drip_dir/.git ]]; then
+            drip_install=checkout
         else
-            # Standalone
-            drip_dir=
-            drip_install=standalone
-            DRIP_JAR=$(mvn_get 'drip' 'org/flatland' "$DRIP_VERSION" "$DRIP_JAR_URL")
+            drip_install=package
         fi
+
+        drip_jar=$drip_dir/drip.jar
+        (cd -- "$drip_dir" && make -s) || exit 1
+        drip_proxy=$bin_dir/drip_proxy
+        drip_daemon=$bin_dir/drip_daemon
+    else
+        # Standalone
+        drip_dir=
+        drip_install=standalone
+        drip_jar=$(mvn_get 'drip' 'org/flatland' "$DRIP_VERSION" "$DRIP_JAR_URL")
+
+        drip_proxy=$(compile 'drip_proxy')
+        drip_daemon=$(compile 'drip_daemon')
+        [[ -e $drip_proxy && -e $drip_daemon ]] || exit 1
     fi
-    drip_proxy=$(compile 'drip_proxy')
-    drip_daemon=$(compile 'drip_daemon')
-    [[ -e $drip_proxy && -e $drip_daemon ]] || exit 1
 }
 
 function compile {
@@ -161,7 +162,7 @@ function launch_jvm {
         export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 
         $drip_daemon $JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
-                               "-Xbootclasspath/a:$DRIP_JAR:$bootclasspath" \
+                               "-Xbootclasspath/a:$drip_jar:$bootclasspath" \
                                org.flatland.drip.Main "$main_class" "$jvm_dir"
     fi
 }

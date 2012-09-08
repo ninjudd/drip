@@ -1,23 +1,29 @@
 PREFIX=~/bin
-SOURCES=$(wildcard src/org/flatland/drip/*.java)
-CLASSES=$(SOURCES:.java=.class)
+JAVA_SRC=$(wildcard src/org/flatland/drip/*.java)
+C_SRC=$(wildcard src/*.c)
+CLASSES=$(JAVA_SRC:.java=.class)
+BINARIES=$(subst src,bin,$(C_SRC:.c=))
 JAR=drip.jar
 
-all: jar compile
+all: compile jar
 
 %.class: %.java
-	javac ${SOURCES}
+	javac ${JAVA_SRC}
+
+bin/%: src/%.c
+	gcc $< -o $@
 
 ${JAR}: ${CLASSES}
 	jar cf ${JAR} -C src/ org
 
 jar: ${JAR}
 
-compile: ${CLASSES}
+compile: ${BINARIES} ${CLASSES}
 
 clean:
-	rm ${CLASSES}
-	rm ${JAR}
+	rm -f ${BINARIES}
+	rm -f ${CLASSES}
+	rm -f ${JAR}
 
 install: jar
 	mkdir -p ${PREFIX}

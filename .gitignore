@@ -2,5 +2,6 @@
 *.class
 *.jar
 *.tgz
+bin/drip_*
 test/scala
 repl-port
