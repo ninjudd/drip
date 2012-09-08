@@ -106,6 +106,8 @@ function parse_args {
                 classpath=false
             elif [[ $arg == "-cp" || $arg == "-classpath" ]]; then
                 classpath=true
+            elif [[ $arg == -Xbootclasspath/a:* ]]; then
+                bootclasspath=${arg#-Xbootclasspath/a:}
             elif [[ $arg == --* ]]; then
                 runtime_args+=("${arg:1}")
                 continue
@@ -147,7 +149,7 @@ function launch_jvm {
         export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 
         $drip_daemon $JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
-                               "-Xbootclasspath/a:$DRIP_JAR" \
+                               "-Xbootclasspath/a:$DRIP_JAR:$bootclasspath" \
                                org.flatland.drip.Main "$main_class" "$jvm_dir"
     fi
 }
