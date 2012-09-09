@@ -29,3 +29,9 @@ function test_runtime_environment {
     export foo=baz
     assert_equal '"baz"' "$(drip -cp clojure.jar clojure.main -e '(System/getenv "foo")')"
 }
+
+function test_jar_option {
+    assert_equal 36 "$(drip -jar clojure.jar -e '(* 6 6)')"
+    assert_equal 49 "$(drip -jar clojure.jar -e '(* 7 7)')"
+    assert_equal 64 "$(drip -jar clojure.jar -e '(* 8 8)')"
+}
