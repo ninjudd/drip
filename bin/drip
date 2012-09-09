@@ -172,7 +172,7 @@ function launch_jvm {
 
         export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 
-        $drip_daemon $JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
+        $drip_daemon $DRIP_JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
                                "-Xbootclasspath/a:$drip_jar:$bootclasspath" \
                                "-classpath" "$classpath" \
                                org.flatland.drip.Main "$main_class" "$jvm_dir"
@@ -217,7 +217,7 @@ function find_jvm {
     done
 
     if [[ -z $active_jvm_dir ]]; then
-        exec $JAVA_CMD "${jvm_args[@]}" "${runtime_args[@]}" \
+        exec $DRIP_JAVA_CMD "${jvm_args[@]}" "${runtime_args[@]}" \
                        "-Xbootclasspath/a:$bootclasspath" \
                        "-classpath" "$classpath" \
                        "$main_class" "${main_args[@]}"
@@ -344,16 +344,16 @@ DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
 DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar}
 DRIP_BIN_URL=${DRIP_BIN_URL:-https://raw.github.com/flatland/drip/$DRIP_BRANCH/bin/drip}
 DRIP_SRC_URL=${DRIP_SRC_URL:-https://raw.github.com/flatland/drip/$DRIP_BRANCH/src}
+DRIP_JAVA_CMD=${DRIP_JAVA_CMD:-java}
+DRIP_JAVA_CMD=$(which $DRIP_JAVA_CMD)
 MVN_REPO=${MVN_REPO:-~/.m2/repository}
-JAVA_CMD=${JAVA_CMD:-java}
-JAVA_CMD=$(which java)
 
 bootstrap
 
 parse_args "$@"
 
 if [[ -z $drip_command ]]; then
-    [[ -z $java_command ]] || exec $JAVA_CMD $java_command
+    [[ -z $java_command ]] || exec $DRIP_JAVA_CMD $java_command
     find_jvm
     run_main
 
