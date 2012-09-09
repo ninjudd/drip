@@ -36,6 +36,10 @@ development, this is the way to go.*
     git clone https://github.com/flatland/drip.git
     cd drip && make prefix=~/bin install
 
+**Homebrew** &mdash; *This is a convenient way to brew drip on OS X.*
+
+    brew install drip
+
 # Usage
 
 You can call `drip` with the same arguments as `java`. Try it. The first time
