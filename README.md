@@ -8,17 +8,17 @@ to work with any JVM-based language and anywhere bash is available.
 # How does it work?
 
 Unlike other tools intended to solve the JVM startup problem (e.g. Nailgun,
-cake), Drip does not use a persistent JVM. There are many pitfalls to using a
-persistent JVM, which we discovered while working on the cake build tool for
+Cake), Drip does not use a persistent JVM. There are many pitfalls to using a
+persistent JVM, which we discovered while working on the Cake build tool for
 Clojure. The main problem is that the state of the persistent JVM gets dirty
 over time, producing strange errors and requiring liberal use of `cake kill`
 whenever any error is encountered, *just in case* dirty state is the cause.
 
 Instead of going down this road, Drip uses a different strategy. It keeps a
 fresh JVM spun up in reserve with the correct classpath and other JVM options
-so you can quickly connect and use it when needed. Drip hashes the JVM options
-and stores information about how to connect to the JVM in a directory with
-the hash value as its name.
+so you can quickly connect and use it when needed, then throw it away. Drip
+hashes the JVM options and stores information about how to connect to the JVM
+in a directory with the hash value as its name.
 
 # Installation
 
