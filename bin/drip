@@ -326,6 +326,7 @@ function run_drip_command {
                     echo For example:
                     echo   brew update && brew upgrade drip
             esac
+            bootstrap
             exit $?;;
         *)
             echo Unknown command: $drip_command
