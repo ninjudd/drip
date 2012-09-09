@@ -147,7 +147,7 @@ function parse_args {
 }
 
 function make_sha_path {
-    opts="${jvm_args[*]} $main_class"
+    opts="$PWD ${jvm_args[*]} $classpath $bootclasspath $main_class"
     sha=$(echo -n "$opts" | git hash-object --stdin)
     sha_path=$drip_root/$sha
     mkdir -p "$sha_path"
