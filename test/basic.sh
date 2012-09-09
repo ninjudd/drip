@@ -35,3 +35,9 @@ function test_jar_option {
     assert_equal 49 "$(drip -jar clojure.jar -e '(* 7 7)')"
     assert_equal 64 "$(drip -jar clojure.jar -e '(* 8 8)')"
 }
+
+function test_hashing {
+    # Not the best test, but at least if verifies that two separate JVMs are started.
+    assert_equal 36 "$(drip -cp clojure.jar clojure.main -e '(* 6 6)')"
+    assert_equal 36 "$(drip -cp jruby.jar org.jruby.Main -e 'puts 6 * 6')"
+}
