@@ -40,6 +40,9 @@ development, this is the way to go.*
 
     brew install drip
 
+Note: Installing brew requires `gcc`. Here are [instructions](http://stackoverflow.com/questions/9353444)
+for how to install it on OS X Mountain Lion.
+
 # Usage
 
 You can call `drip` with the same arguments as `java`. Try it. The first time
@@ -67,7 +70,7 @@ requests with the same classpath will have a 30-minute timeout to deactivation.
 For more information about how to integrate Drip with your favorite JVM
 language, check out the [wiki](https://github.com/flatland/drip/wiki).
 
-# Advanced settings 
+# Advanced settings
 
 Drip supports the following advanced settings.
 
