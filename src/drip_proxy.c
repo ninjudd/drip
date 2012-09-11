@@ -3,8 +3,10 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <setjmp.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
 #include <sys/select.h>
 #include <sys/types.h>
 #include <termios.h>
@@ -37,6 +39,12 @@ int writeall(int fd, const void *buf, ssize_t count) {
     buf += n;
   }
   return 0;
+}
+
+volatile sig_atomic_t resize = 0;
+
+void winch(int signal) {
+    resize = 1;
 }
 
 void proxy(int in, int out, int err) {
@@ -72,6 +80,13 @@ void proxy(int in, int out, int err) {
       if (count <= 0) return;
       writeall(2, buf, count);
     }
+
+    if (resize) {
+      resize = 0;
+      struct winsize size;
+      ioctl(0,  TIOCGWINSZ, &size);
+      ioctl(in, TIOCSWINSZ, &size);
+    }
   }
 }
 
@@ -79,6 +94,7 @@ int open_pty() {
   int fd = check("posix_openpt", posix_openpt(O_RDWR | O_NOCTTY));
   check("grantpt",  grantpt(fd));
   check("unlockpt", unlockpt(fd));
+
   return fd;
 }
 
@@ -135,6 +151,9 @@ int main(int argc, char** argv) {
         err = pty;
         check("symlink err", symlink(pty_name, path("err")));
       }
+
+      signal(SIGWINCH, winch);
+      resize = 1;
     }
 
     if (!in)  in  = open_fifo("in",  O_WRONLY);
