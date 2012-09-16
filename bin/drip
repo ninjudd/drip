@@ -116,7 +116,7 @@ function parse_args {
         return
     fi
 
-    unset classpath bootclasspath main_class main_args runtime_args context
+    unset classpath main_class main_args runtime_args context
     for arg in "$@"; do
         if [[ -z $main_class ]]; then
             if [[ -z $context ]]; then
@@ -124,8 +124,6 @@ function parse_args {
                     context='-cp'
                 elif [[ $arg == "-jar" ]]; then
                     context='-jar'
-                elif [[ $arg == -Xbootclasspath/a:* ]]; then
-                    bootclasspath=${arg#-Xbootclasspath/a:}
                 elif [[ $arg == --* ]]; then
                     runtime_args+=("${arg:1}")
                 elif [[ $arg != -* ]]; then
@@ -147,7 +145,7 @@ function parse_args {
 }
 
 function make_sha_path {
-    opts="$PWD ${jvm_args[*]} $classpath $bootclasspath $main_class"
+    opts="$PWD ${jvm_args[*]} $classpath $main_class"
     sha=$(echo -n "$opts" | git hash-object --stdin)
     sha_path=$drip_root/$sha
     mkdir -p "$sha_path"
@@ -173,9 +171,8 @@ function launch_jvm {
         export DRIP_INIT=${DRIP_INIT:-$(default_init_args)}
 
         $drip_daemon $DRIP_JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
-                               "-Xbootclasspath/a:$drip_jar:$bootclasspath" \
-                               "-classpath" "$classpath" \
-                               org.flatland.drip.Main "$main_class" "$jvm_dir" > /dev/null
+                                    "-classpath" "$drip_jar:$classpath" \
+                                    org.flatland.drip.Main "$main_class" "$jvm_dir" > /dev/null
     fi
 }
 
@@ -218,9 +215,8 @@ function find_jvm {
 
     if [[ -z $active_jvm_dir ]]; then
         exec $DRIP_JAVA_CMD "${jvm_args[@]}" "${runtime_args[@]}" \
-                       "-Xbootclasspath/a:$bootclasspath" \
-                       "-classpath" "$classpath" \
-                       "$main_class" "${main_args[@]}"
+                            "-classpath" "$classpath" \
+                            "$main_class" "${main_args[@]}"
     fi
 }
 
