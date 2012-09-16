@@ -320,7 +320,7 @@ function run_drip_command {
                 package)
                     echo Please use your package manager to upgrade Drip.
                     echo For example:
-                    echo   brew update && brew upgrade drip
+                    echo '  brew update && brew upgrade drip'
             esac
             bootstrap
             exit $?;;
