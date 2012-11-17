@@ -41,7 +41,7 @@ test/test/Main.class: test/test/Main.java
 	javac $<
 
 clojure_url=http://repo1.maven.org/maven2/org/clojure/clojure/1.4.0/clojure-1.4.0.jar
-jruby_url=http://jruby.org.s3.amazonaws.com/downloads/1.6.7.2/jruby-complete-1.6.7.2.jar
+jruby_url=http://jruby.org.s3.amazonaws.com/downloads/1.7.0/jruby-complete-1.7.0.jar
 scala_url=http://www.scala-lang.org/downloads/distrib/files/scala-2.9.2.tgz
 
 test/clojure.jar:
