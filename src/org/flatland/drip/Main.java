@@ -21,7 +21,7 @@ public class Main {
   private SwitchableInputStream  in;
 
   public Main(String mainClass, String dir) {
-    this.mainClass = mainClass.replace('/', '.');
+    this.mainClass = mainClass;
     this.dir = new File(dir);
   }
 

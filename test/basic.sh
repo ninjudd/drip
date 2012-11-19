@@ -41,3 +41,11 @@ function test_hashing {
     assert_equal 36 "$(drip -cp clojure.jar clojure.main -e '(* 6 6)')"
     assert_equal 36 "$(drip -cp jruby.jar org.jruby.Main -e 'puts 6 * 6')"
 }
+
+function test_slashes_in_class {
+    assert_equal 36 "$(drip -cp clojure.jar clojure/main -e '(* 6 6)')"
+    assert_equal 49 "$(drip -cp clojure.jar clojure/main -e '(* 7 7)')"
+
+    export DRIP_INIT_CLASS=clojure/main
+    assert_equal 36 "$(drip -cp clojure.jar clojure/main -e '(* 6 6)')"
+}
