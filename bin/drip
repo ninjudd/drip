@@ -154,7 +154,9 @@ function make_sha_path {
 
 function default_init_args {
     local f='%s\n%s'
-    case ${DRIP_INIT_CLASS:-$main_class} in
+    local class=${DRIP_INIT_CLASS:-$main_class}
+    class=${class//\//.}
+    case $class in
         clojure.main)                      printf $f '-e' 'nil';;
         org.jruby.Main)                    printf $f '-e' 'nil';;
         scala.tools.nsc.MainGenericRunner) printf $f '-e' 'null';;
