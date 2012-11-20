@@ -114,5 +114,6 @@ function run_all_tests {
     cd - > /dev/null
 }
 
+export PATH=../bin:$PATH
 run_all_tests "$@"
 test_results
