@@ -14,6 +14,9 @@ function test_exit_status {
     drip -cp clojure.jar clojure.main -e '(System/exit 123)'
     assert_equal 123 $?
 
+    drip -cp clojure.jar clojure.main -e '(System/exit 0)'
+    assert_equal 0 $?
+
     drip -cp clojure.jar clojure.main -e 'nil'
     assert_equal 0 $?
 
