@@ -106,7 +106,7 @@ function run_all_tests {
             ((test_count++))
             setup
             [[ -z $VERBOSE ]] || printf "\n%s %s %s\n" "$0" "$suite" "$test"
-            $test
+            ($test)
             teardown
         done
     done
