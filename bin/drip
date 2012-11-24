@@ -27,8 +27,8 @@ function bootstrap {
     # resolve symlinks to the script itself portably
     while [[ -h $script ]] ; do
         local ls=$(ls -ld -- "$script")
-        local link=$(expr "$ls" : '.*-> \(.*\)$')
-        if expr "$link" : '/.*' > /dev/null; then
+        local link=$(expr -- "$ls" : '.*-> \(.*\)$')
+        if expr -- "$link" : '/.*' > /dev/null; then
             script=$link
         else
             script=$(dirname "$script"$)/$link
@@ -93,7 +93,7 @@ declare -a runtime_args
 function jar_main_class {
     local jar=$1
     local line=$(unzip -p $jar META-INF/MANIFEST.MF | grep ^Main-Class:)
-    local main_class=$(expr "$line" : '^Main-Class: \([^[:space:]]*\)')
+    local main_class=$(expr -- "$line" : '^Main-Class: \([^[:space:]]*\)')
     echo $main_class
 }
 
@@ -108,7 +108,7 @@ function parse_args {
         echo '    kill [-signal]   kill all idle drip JVMs (with signal)'
         echo '    ps               print a list of all drip processes'
         exit 0
-    elif ! expr "$1" : '.*[.-]' > /dev/null; then
+    elif ! expr -- "$1" : '.*[.-]' > /dev/null; then
         drip_command=$1
         return
     elif [[ $# -eq 1 && $1 == -* ]]; then
