@@ -218,9 +218,9 @@ function find_jvm {
     done
 
     if [[ -z $active_jvm_dir ]]; then
-        exec $DRIP_JAVA_CMD "${jvm_args[@]}" "${runtime_args[@]}" \
-                            "-classpath" "$classpath" \
-                            "$main_class" "${main_args[@]}"
+        exec "$DRIP_JAVA_CMD" "${jvm_args[@]}" "${runtime_args[@]}" \
+                              "-classpath" "$classpath" \
+                              "$main_class" "${main_args[@]}"
     fi
 }
 
@@ -353,7 +353,7 @@ bootstrap
 parse_args "$@"
 
 if [[ -z $drip_command ]]; then
-    [[ -z $java_command ]] || exec $DRIP_JAVA_CMD $java_command
+    [[ -z $java_command ]] || exec "$DRIP_JAVA_CMD" $java_command
     find_jvm
     run_main
 
