@@ -4,12 +4,13 @@ c_src=$(wildcard src/*.c)
 classes=$(subst src,classes,$(java_src:.java=.class))
 binaries=$(subst src,bin,$(c_src:.c=))
 jar=drip.jar
+javac=javac -source 1.5
 
 all: compile jar
 
 classes/%.class: src/%.java
 	mkdir -p classes/
-	javac ${java_src} -d classes/
+	${javac} ${java_src} -d classes/
 
 bin/%: src/%.c
 	gcc $< -o $@
@@ -38,7 +39,7 @@ test: jar test/clojure.jar test/jruby.jar test/scala test/test/Main.class
 	test/run
 
 test/test/Main.class: test/test/Main.java
-	javac $<
+	${javac} $<
 
 clojure_url=http://repo1.maven.org/maven2/org/clojure/clojure/1.4.0/clojure-1.4.0.jar
 jruby_url=http://jruby.org.s3.amazonaws.com/downloads/1.7.0/jruby-complete-1.7.0.jar
