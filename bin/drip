@@ -338,7 +338,7 @@ function run_drip_command {
 
 DRIP_POOL=1
 DRIP_HOME=${DRIP_HOME:-~/.drip}
-DRIP_VERSION=${DRIP_VERSION:-0.1.9}
+DRIP_VERSION=${DRIP_VERSION:-0.1.10}
 DRIP_BRANCH=${DRIP_BRANCH:-master}
 DRIP_REPO=${DRIP_REPO:-http://clojars.org/repo}
 DRIP_JAR_URL=${DRIP_JAR_URL:-$DRIP_REPO/org/flatland/drip/$DRIP_VERSION/drip-$DRIP_VERSION.jar}
