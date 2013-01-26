@@ -167,7 +167,6 @@ function launch_jvm {
 
     if mkdir "$jvm_dir"; then
         mkfifo "$jvm_dir/control"
-        mkfifo "$jvm_dir/status"
 
         DRIP_INIT_CLASS=${DRIP_INIT_CLASS:-$main_class}
         export DRIP_INIT_CLASS=${DRIP_INIT_CLASS//\//.}
@@ -283,6 +282,7 @@ function send_env {
 }
 
 function send_args {
+    mkfifo "$active_jvm_dir/status"
     exec 4> "$active_jvm_dir/control"
     send_array "${main_args[@]}" >&4
     send_array "${runtime_args[@]}" >&4

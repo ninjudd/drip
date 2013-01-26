@@ -3,6 +3,8 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 static char* jvm_dir;
 
@@ -44,6 +46,16 @@ int main(int argc, char **argv) {
 
     int status;
     wait(&status);
-    spit_int("status", status/256);
+
+    status /= 256;
+    if (access("status", F_OK) != -1) {
+      spit_int("status", status);
+    } else {
+      fprintf(stderr, "java process exited prematurely with status %d: ", status);
+      for (int i=1; i < argc; i++) {
+        fprintf(stderr, "%s ", argv[i]);
+      }
+      fprintf(stderr, "\n");
+    }
   }
 }
