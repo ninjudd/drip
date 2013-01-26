@@ -52,7 +52,8 @@ int main(int argc, char **argv) {
       spit_int("status", status);
     } else {
       fprintf(stderr, "java process exited prematurely with status %d: ", status);
-      for (int i=1; i < argc; i++) {
+      int i;
+      for (i=1; i < argc; i++) {
         fprintf(stderr, "%s ", argv[i]);
       }
       fprintf(stderr, "\n");
