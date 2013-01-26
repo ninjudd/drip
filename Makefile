@@ -13,7 +13,7 @@ classes/%.class: src/%.java
 	${javac} ${java_src} -d classes/
 
 bin/%: src/%.c
-	gcc -std=c99 $< -o $@
+	gcc $< -o $@
 
 ${jar}: ${classes}
 	jar cf ${jar} -C src/ org
