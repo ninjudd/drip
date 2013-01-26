@@ -67,7 +67,7 @@ public class Main {
   public void start() throws Exception {
     reopenStreams();
 
-    Method main = mainMethod(mainClass);
+    Method main = mainMethod(mainClass);    
     Method init = mainMethod(System.getenv("DRIP_INIT_CLASS"));
     String initArgs = System.getenv("DRIP_INIT");
     if (initArgs != null) {
@@ -90,11 +90,11 @@ public class Main {
 
   private Method mainMethod(String className)
     throws ClassNotFoundException, NoSuchMethodException {
-    if (className != null) {
+    if (className == null || className.equals("")) {
+      return null;
+    } else {
       return Class.forName(className, true, ClassLoader.getSystemClassLoader())
         .getMethod("main", String[].class);
-    } else {
-      return null;
     }
   }
 
