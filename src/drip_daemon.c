@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     wait(&status);
 
     status /= 256;
-    if (access("status", F_OK) != -1) {
+    if (access(path("status"), F_OK) != -1) {
       spit_int("status", status);
     } else {
       fprintf(stderr, "java process exited prematurely with status %d: ", status);
