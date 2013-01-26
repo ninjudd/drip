@@ -32,6 +32,18 @@ install: jar
 	mkdir -p ${prefix}
 	ln -sf $$PWD/bin/drip ${prefix}/drip
 
+tag:
+	@[ -n "${version}" ] ||\
+          (echo "Version variable required." && exit 1)
+	@(git diff-files --quiet && git diff-index --cached --quiet HEAD) ||\
+          (echo "Working directory must be clean." && exit 1)
+	sed -i~ 's/<version>.*<\/version>/<version>${version}<\/version>/' pom.xml
+	sed -i~ 's/DRIP_VERSION=.*/DRIP_VERSION=${version}/' bin/drip
+	git commit -am "${version}"
+	git push origin
+	git tag ${version}
+	git push origin ${version}
+
 release: jar
 	scp ${jar} pom.xml clojars@clojars.org:
 
