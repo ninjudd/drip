@@ -5,12 +5,12 @@ pass_count=0
 fail_count=0
 
 function passed {
-    let pass_count=pass_count+1
+    let pass_count++
     printf '.'
 }
 
 function failed {
-    let fail_count=fail_count+1
+    let fail_count++
     echo
     echo " $fail_count) FAILURE in $test"
     stacktrace 1
@@ -49,14 +49,14 @@ function assert_match {
 }
 
 function stacktrace {
-  let frame=$1+1
+  let frame++
 
   while caller=$(caller $frame); do
     local line=$(expr "$caller" : '\([0-9]*\)')
     local func=$(expr "$caller" : '[0-9]* \([^ ]*\)')
     local file=$(expr "$caller" : '[0-9]* [^ ]* \([^ ]*\)')
     echo "     $file:$line in $func"
-    ((frame++))
+    let frame++
   done
 }
 
