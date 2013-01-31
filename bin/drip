@@ -154,16 +154,17 @@ function make_sha_path {
 }
 
 function default_init {
+    local f='%s\n%s'
     case $main_class in
         clojure.main)
             DRIP_INIT_CLASS='clojure.main'
-            DRIP_INIT='-e\nnil';;
+            DRIP_INIT=$(printf $f '-e' 'nil');;
         org.jruby.Main)
             DRIP_INIT_CLASS='org.jruby.Main'
-            DRIP_INIT='-e\nnil';;
+            DRIP_INIT=$(printf $f '-e' 'nil');;
         scala.tools.nsc.MainGenericRunner)
             DRIP_INIT_CLASS='scala.tools.nsc.MainGenericRunner'
-            DRIP_INIT='-e\nnull';;
+            DRIP_INIT=$(printf $f '-e' 'null');;
     esac
 }
 
@@ -172,7 +173,7 @@ function launch_jvm {
 
     if mkdir "$jvm_dir"; then
         mkfifo "$jvm_dir/control"
-        
+
         if [[ -z $DRIP_INIT_CLASS ]]; then
             default_init
         fi
