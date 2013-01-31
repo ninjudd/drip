@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     status /= 256;
     if (access(path("status"), F_OK) != -1) {
       spit_int("status", status);
-    } else {
+    } else if (status <= 128) { // don't print an error for signals
       fprintf(stderr, "java process exited prematurely with status %d: ", status);
       int i;
       for (i=1; i < argc; i++) {
