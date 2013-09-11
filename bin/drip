@@ -93,7 +93,7 @@ declare -a runtime_args
 function jar_main_class {
     local jar=$1
     local line=$(unzip -p $jar META-INF/MANIFEST.MF | grep ^Main-Class:)
-    local main_class=$(expr -- "$line" : '^Main-Class: \([^[:space:]]*\)')
+    local main_class=$(expr -- "$line" : 'Main-Class: \([^[:space:]]*\)')
     echo $main_class
 }
 
