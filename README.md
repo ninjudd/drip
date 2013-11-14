@@ -102,3 +102,8 @@ them into the map returned by `System.getenv`. Keep in mind that the environment
 isn't modified until we connect to the JVM; during initialization, the
 environment will be derived from the previous process that launched the spare
 JVM. 
+
+# License
+
+Drip is licensed under the EPL Eclipse Public License. See LICENSE for
+details.
