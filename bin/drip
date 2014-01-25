@@ -160,8 +160,8 @@ function default_init {
             DRIP_INIT_CLASS='clojure.main'
             DRIP_INIT=$(printf $f '-e' 'nil');;
         org.jruby.Main)
-            DRIP_INIT_CLASS='org.jruby.Main'
-            DRIP_INIT=$(printf $f '-e' 'nil');;
+            DRIP_INIT_CLASS='org.jruby.main.DripMain'
+            DRIP_INIT=$(printf $f '1 + 1');;
         scala.tools.nsc.MainGenericRunner)
             DRIP_INIT_CLASS='scala.tools.nsc.MainGenericRunner'
             DRIP_INIT=$(printf $f '-e' 'null');;
@@ -344,7 +344,7 @@ function run_drip_command {
 
 # Let's go.
 
-DRIP_VERSION=0.2.3
+DRIP_VERSION=0.2.5
 DRIP_POOL=1
 DRIP_HOME=${DRIP_HOME:-~/.drip}
 DRIP_BRANCH=${DRIP_BRANCH:-master}

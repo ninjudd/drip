@@ -35,8 +35,6 @@ int main(int argc, char **argv) {
   // Start a child process and exit the parent.
   if (check("fork parent", fork()) != 0) exit(0);
 
-  umask(0);
-
   int child = check("fork child", fork());
   if (child == 0) {
     check("setsid", setsid());
