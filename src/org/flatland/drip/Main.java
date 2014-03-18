@@ -70,9 +70,8 @@ public class Main {
     Method main = mainMethod(mainClass);    
     Method init = mainMethod(System.getenv("DRIP_INIT_CLASS"));
     String initArgs = System.getenv("DRIP_INIT");
-    if (initArgs != null) {
-      invoke(init == null ? main : init, split(initArgs, "\n"));
-    }
+    initArgs = initArgs == null ? "" : initArgs;
+    invoke(init == null ? main : init, split(initArgs, "\n"));
     startIdleKiller();
 
     Scanner fromBash = new Scanner(new File(dir, "control"));
