@@ -28,7 +28,7 @@ clean:
 	rm -f ${binaries}
 	rm -f ${jar}
 
-install: jar
+install: jar compile
 	mkdir -p ${prefix}
 	ln -sf $$PWD/bin/drip ${prefix}/drip
 
