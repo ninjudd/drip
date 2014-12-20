@@ -68,7 +68,7 @@ requests with the same classpath will have a 30-minute timeout to deactivation.
 ### JVM Language Integration
 
 For more information about how to integrate Drip with your favorite JVM
-language, check out the [wiki](https://github.com/flatland/drip/wiki).
+language, check out the [wiki](https://github.com/ninjudd/drip/wiki).
 
 # Advanced settings
 
