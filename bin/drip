@@ -180,7 +180,9 @@ function launch_jvm {
         export DRIP_INIT_CLASS=${DRIP_INIT_CLASS//\//.}
         export DRIP_INIT
 
-        $drip_daemon $DRIP_JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
+        #### The idea here is to set an environment variable indicating this is a drip worker process, and which drip JVM directory
+        #### it's running under.  This allows proper handling of attempts to execv to a new Java instance
+        DRIP_DAEMON_JVM_DIR=$jvm_dir $drip_daemon $DRIP_JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
                                     "-classpath" "$drip_jar:$classpath" \
                                     org.flatland.drip.Main "$main_class" "$jvm_dir" \
                                     > /dev/null 2> $drip_root/error.log
@@ -361,6 +363,37 @@ bootstrap
 parse_args "$@"
 
 if [[ -z $drip_command ]]; then
+    # Detect if this is already a drip_deamon child process, to avoid the tragic consequences of incest
+    if [[ -n "$DRIP_DAEMON_JVM_DIR" ]]; then
+        # Some Java code inside of a drip child process is performing an exec to swap out that process with a new JVM process
+        # This requires special handling, since whoever invoked the child process in the first place is monitoring its IO streams
+        # and exit status.  Need to bootstrap this instance with the Drip main class, but without spawning another child process
+        # or taking a JVM process from the pool
+        #
+        # HACK: This code is proof of concept only.  It's a shining example of What Not To Do With Bash
+        active_jvm_dir=$DRIP_DAEMON_JVM_DIR
+
+        # Send the args for this command.  Can't use send_args because the JVM that reads from the fifo /control
+        # isn't running yet, so a direct write will block
+        # There is no doubt a more elegant way to do this.
+        exec 4> "$active_jvm_dir/control_hack"
+        send_array "${main_args[@]}" >&4
+        send_array "${runtime_args[@]}" >&4
+        send_env >&4
+        exec 4>&-
+
+        # Copy the commands from the regular file control_hack into the fifi control.  This will block until 
+        # the Java command is started a few lines later, so do it in the background.
+        cat "$active_jvm_dir/control_hack" > "$active_jvm_dir/control" &
+
+        # Finally, exec the java command into this process.  It needs to be in this process since there is a parent process somewhere running drip_proxy
+        # which is redirecting the I/Os from this specific process, not a child.
+        exec $DRIP_JAVA_CMD "${jvm_args[@]}" -Djava.awt.headless=true \
+                                    "-classpath" "$drip_jar:$classpath" \
+                                    org.flatland.drip.Main "$main_class" "$active_jvm_dir" \
+                                    > /dev/null 2> $drip_root/error.log
+    fi
+
     [[ -z $java_command ]] || exec "$DRIP_JAVA_CMD" $java_command
     find_jvm
     run_main
