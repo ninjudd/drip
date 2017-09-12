@@ -33,7 +33,7 @@ not the case, you can substitute your favorite location.
 **Checkout** &mdash; *If you want to hack on Drip or follow the latest
 development, this is the way to go.*
 
-    git clone https://github.com/flatland/drip.git
+    git clone https://github.com/ninjudd/drip.git
     cd drip && make prefix=~/bin install
 
 **Homebrew** &mdash; *This is a convenient way to brew drip on OS X.*
