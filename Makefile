@@ -5,6 +5,7 @@ classes=$(subst src,classes,$(java_src:.java=.class))
 binaries=$(subst src,bin,$(c_src:.c=))
 jar=drip.jar
 javac=javac -source 1.5 -target 1.5
+CFLAGS=-O2
 
 all: compile jar
 
@@ -13,7 +14,7 @@ classes/%.class: src/%.java
 	${javac} ${java_src} -d classes/
 
 bin/%: src/%.c
-	gcc $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 ${jar}: ${classes}
 	jar cf ${jar} -C src/ org
@@ -24,9 +25,9 @@ jar: ${jar}
 compile: ${binaries} ${classes}
 
 clean:
-	rm -rf classes
-	rm -f ${binaries}
-	rm -f ${jar}
+	$(RM) -r classes
+	$(RM) -f ${binaries}
+	$(RM) -f ${jar}
 
 install: jar compile
 	mkdir -p ${prefix}
