@@ -1,5 +1,5 @@
 prefix=~/bin
-java_src=$(wildcard src/org/flatland/drip/*.java)
+java_src = $(shell find src/org/ -type f -name '*.java')
 c_src=$(wildcard src/*.c)
 classes=$(subst src,classes,$(java_src:.java=.class))
 binaries=$(subst src,bin,$(c_src:.c=))
