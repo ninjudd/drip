@@ -4,7 +4,7 @@ c_src=$(wildcard src/*.c)
 classes=$(subst src,classes,$(java_src:.java=.class))
 binaries=$(subst src,bin,$(c_src:.c=))
 jar=drip.jar
-javac=javac -source 1.5 -target 1.5
+javac=javac
 
 all: compile jar
 
