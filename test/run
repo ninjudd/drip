@@ -70,6 +70,11 @@ function test_results {
     fi
 }
 
+#failing tests were causing stale vms
+function kill_stale_vms {
+   drip kill
+}
+
 function init_fixtures {
     eval "function setup    { :; }"
     eval "function teardown { :; }"
@@ -110,4 +115,5 @@ function run_all_tests {
 
 export PATH=../bin:$PATH
 run_all_tests "$@"
+kill_stale_vms
 test_results
