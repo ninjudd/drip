@@ -70,6 +70,11 @@ function test_results {
     fi
 }
 
+#failing tests were causing stale vms
+function kill_stale_vms {
+   setup
+}
+
 function init_fixtures {
     eval "function setup    { :; }"
     eval "function teardown { :; }"
@@ -78,13 +83,7 @@ function init_fixtures {
 function run_all_tests {
     cd $(dirname $0)
 
-    local files=()
-    while read -r -d '' file; do
-        [[ $file =~ \# ]] && continue
-        [[ -z $1 || $file == ./$1.sh ]] || continue
-        files+=("$file")
-    done < <(find . \( -name helpers -prune -or -name \*.sh \) -type f -print0)
-
+    local files=(./commands.sh ./performance.sh ./basic.sh)
     for file in "${files[@]}"; do
         local tests=()
         while read -r line; do
@@ -109,6 +108,7 @@ function run_all_tests {
             $test
             teardown
         done
+        kill_stale_vms
     done
 
     cd - > /dev/null

@@ -1,10 +1,10 @@
 prefix=~/bin
-java_src=$(wildcard src/org/flatland/drip/*.java)
+java_src = $(shell find src/org/ -type f -name '*.java')
 c_src=$(wildcard src/*.c)
 classes=$(subst src,classes,$(java_src:.java=.class))
 binaries=$(subst src,bin,$(c_src:.c=))
 jar=drip.jar
-javac=javac -source 1.5 -target 1.5
+javac=javac
 
 all: compile jar
 
@@ -53,9 +53,10 @@ test: jar test/clojure.jar test/jruby.jar test/scala test/test/Main.class
 test/test/Main.class: test/test/Main.java
 	${javac} $<
 
-clojure_url=http://repo1.maven.org/maven2/org/clojure/clojure/1.4.0/clojure-1.4.0.jar
-jruby_url=http://jruby.org.s3.amazonaws.com/downloads/1.7.0/jruby-complete-1.7.0.jar
-scala_url=http://www.scala-lang.org/downloads/distrib/files/scala-2.9.2.tgz
+clojure_url=http://repo1.maven.org/maven2/org/clojure/clojure/1.8.0/clojure-1.8.0.jar
+jruby_url=https://repo1.maven.org/maven2/org/jruby/jruby-complete/9.2.9.0/jruby-complete-9.2.9.0.jar
+scala_url=https://downloads.lightbend.com/scala/2.13.1/scala-2.13.1.tgz
+
 
 test/clojure.jar:
 	curl -# ${clojure_url} > $@
