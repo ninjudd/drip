@@ -36,9 +36,13 @@ development, this is the way to go.*
     git clone https://github.com/ninjudd/drip.git
     cd drip && make prefix=~/bin install
 
-**Homebrew** &mdash; *This is a convenient way to brew drip on OS X.*
+**Homebrew or MacPorts** &mdash; *These are convenient ways to install drip on OS X.*
 
     brew install drip
+
+or
+
+    port install drip
 
 Note: Installing brew requires `gcc`. Here are [instructions](http://stackoverflow.com/questions/9353444)
 for how to install it on OS X Mountain Lion.
